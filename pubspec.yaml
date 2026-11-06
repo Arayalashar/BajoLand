@@ -1,5 +1,5 @@
-name: lokaluxe
-description: "A new Flutter project."
+name: bajoland
+description: "BajoLand — Aplikasi Perencana Itinerary dan Manajemen Anggaran Wisata di Labuan Bajo"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -10,42 +10,26 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_localizations:
-    sdk: flutter
-
   cupertino_icons: ^1.0.8
   google_fonts: ^6.2.1
-  shared_preferences: ^2.5.6
-  sqflite: ^2.4.4+2
-  sqflite_common_ffi: ^2.4.4
-  sqflite_common_ffi_web: ^1.2.0
-  path: ^1.9.1
-  crypto: ^3.0.7
-  flutter_secure_storage: ^11.2.0
-  local_auth: ^3.0.2
-
-  flutter_map: ^8.3.2
-  latlong2: ^0.10.1
-  geolocator: ^14.1.2
-  permission_handler: ^13.0.2
-
-  sensors_plus: ^6.1.1
-  http: ^1.4.0
-  provider: ^6.1.5
-  intl: ^0.20.2
-  pdf: ^3.11.3
-  printing: ^5.14.2
-  url_launcher: ^6.3.2
-  audioplayers: ^6.8.1
+  http: ^1.2.2
+  shared_preferences: ^2.5.2
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  geolocator: ^13.0.1
+  intl: ^0.19.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  hive_generator: ^2.0.1
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
-    - assets/db/
-    - assets/audio/
+    - assets/data/
