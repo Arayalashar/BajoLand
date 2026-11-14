@@ -102,7 +102,7 @@ class _LbsScreenState extends State<LbsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Jarak berhasil dihitung dan diurutkan dari yang terdekat!'),
-            backgroundColor: Color(0xFF0D5C3A),
+            backgroundColor: Color(0xFF375534),
           ),
         );
       }
@@ -174,7 +174,7 @@ class _LbsScreenState extends State<LbsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Pengingat ke ${_selectedLocation!.name} dijadwalkan!'),
-          backgroundColor: const Color(0xFF0D5C3A),
+          backgroundColor: const Color(0xFF375534),
         ),
       );
     }
@@ -185,13 +185,13 @@ class _LbsScreenState extends State<LbsScreen> {
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: const Color(0xFFE3EED4),
       appBar: AppBar(
         title: const Text(
-          'Radar Lokasi Bajo (LBS)',
+          'Temukan di Sekitar',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0D5C3A),
+            color: Color(0xFF375534),
           ),
         ),
         backgroundColor: Colors.white,
@@ -223,10 +223,10 @@ class _LbsScreenState extends State<LbsScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0D5C3A).withOpacity(0.1),
+                          color: const Color(0xFF6B9071).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.my_location, color: Color(0xFF0D5C3A)),
+                        child: const Icon(Icons.my_location, color: Color(0xFF375534)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -234,11 +234,11 @@ class _LbsScreenState extends State<LbsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Location-Based Services (LBS)',
+                              'Lokasi Terdekat',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 15,
-                                color: Color(0xFF1F2937),
+                                color: Color(0xFF0F2A1D),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -274,7 +274,7 @@ class _LbsScreenState extends State<LbsScreen> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D5C3A),
+                        backgroundColor: const Color(0xFF375534),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -295,7 +295,7 @@ class _LbsScreenState extends State<LbsScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
+                color: Color(0xFF0F2A1D),
               ),
             ),
             const SizedBox(height: 10),
@@ -341,7 +341,7 @@ class _LbsScreenState extends State<LbsScreen> {
                         errorBuilder: (_, __, ___) => Container(
                           width: 54,
                           height: 54,
-                          color: const Color(0xFF0D5C3A),
+                          color: const Color(0xFF375534),
                           child: const Icon(Icons.image, color: Colors.white),
                         ),
                       ),
@@ -354,7 +354,7 @@ class _LbsScreenState extends State<LbsScreen> {
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: Color(0xFF1F2937),
+                              color: Color(0xFF0F2A1D),
                             ),
                           ),
                         ),
@@ -406,7 +406,7 @@ class _LbsScreenState extends State<LbsScreen> {
                       decoration: BoxDecoration(
                         color: isNearby
                             ? Colors.green.shade100
-                            : const Color(0xFF0D5C3A).withOpacity(0.08),
+                            : const Color(0xFF6B9071).withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -414,7 +414,7 @@ class _LbsScreenState extends State<LbsScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
-                          color: isNearby ? Colors.green.shade900 : const Color(0xFF0D5C3A),
+                          color: isNearby ? Colors.green.shade900 : const Color(0xFF375534),
                         ),
                       ),
                     ),
@@ -444,14 +444,14 @@ class _LbsScreenState extends State<LbsScreen> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.alarm_on, color: Color(0xFF0D5C3A)),
+                      Icon(Icons.alarm_on, color: Color(0xFF375534)),
                       SizedBox(width: 8),
                       Text(
                         'Set Pengingat ke Lokasi',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: Color(0xFF0F2A1D),
                         ),
                       ),
                     ],
@@ -463,7 +463,7 @@ class _LbsScreenState extends State<LbsScreen> {
                     value: _selectedLocation,
                     decoration: InputDecoration(
                       labelText: 'Pilih Titik Destinasi',
-                      prefixIcon: const Icon(Icons.place, color: Color(0xFF0D5C3A)),
+                      prefixIcon: const Icon(Icons.place, color: Color(0xFF375534)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -515,8 +515,8 @@ class _LbsScreenState extends State<LbsScreen> {
                       'Waktu: ${dateFormat.format(DateTime(_reminderDate.year, _reminderDate.month, _reminderDate.day, _reminderTime.hour, _reminderTime.minute))}',
                     ),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF0D5C3A),
-                      side: const BorderSide(color: Color(0xFF0D5C3A)),
+                      foregroundColor: const Color(0xFF375534),
+                      side: const BorderSide(color: Color(0xFF375534)),
                       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -532,7 +532,7 @@ class _LbsScreenState extends State<LbsScreen> {
                       icon: const Icon(Icons.notifications_active),
                       label: const Text('Jadwalkan Pengingat'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0D5C3A),
+                        backgroundColor: const Color(0xFF375534),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
@@ -551,4 +551,3 @@ class _LbsScreenState extends State<LbsScreen> {
     );
   }
 }
-

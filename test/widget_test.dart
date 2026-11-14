@@ -16,7 +16,6 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('BajoLand'), findsWidgets);
-    expect(find.text('Masuk ke BajoLand'), findsOneWidget);
+    expect(find.text('Masuk'), findsOneWidget);
   });
 }

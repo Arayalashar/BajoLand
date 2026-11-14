@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../models/itinerary_item.dart';
 import '../services/notification_service.dart';
+import '../theme/app_palette.dart';
 
 /// Form Tambah/Edit Jadwal & Anggaran (Modul 3, 6, 7)
 class AddItineraryScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0D5C3A),
+              primary: Color(0xFF375534),
               onPrimary: Colors.white,
             ),
           ),
@@ -110,7 +111,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0D5C3A),
+              primary: Color(0xFF375534),
               onPrimary: Colors.white,
             ),
           ),
@@ -178,7 +179,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     await NotificationService.instance.showInstantNotification(
       id: notificationId,
       title: _isEditMode ? 'Jadwal Diperbarui!' : 'Jadwal Baru Disimpan!',
-      body: '$destination: $activity berhasil disimpan ke itinerary BajoLand.',
+      body: '$destination: $activity berhasil disimpan ke rencanamu.',
     );
 
     // 2. Notifikasi Terjadwal Keberangkatan
@@ -199,76 +200,127 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                 ? 'Jadwal berhasil diperbarui!'
                 : 'Jadwal berhasil ditambahkan & pengingat diaktifkan!',
           ),
-          backgroundColor: const Color(0xFF0D5C3A),
+          backgroundColor: const Color(0xFF375534),
         ),
       );
       Get.back();
     }
   }
 
+  Widget _dateTimeCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: AppPalette.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 20, color: AppPalette.forest),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppPalette.deepGreen,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Ubah',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppPalette.forest,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('EEEE, dd MMMM yyyy', 'id_ID');
+    final dateFormat = DateFormat('EEE, d MMM yyyy', 'id_ID');
     final timeFormat = DateFormat('HH:mm');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: AppPalette.ivory,
       appBar: AppBar(
         title: Text(
-          _isEditMode ? 'Edit Jadwal Perjalanan' : 'Tambah Jadwal Baru',
+          _isEditMode ? 'Ubah Rencana' : 'Rencana Baru',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0D5C3A),
+        foregroundColor: AppPalette.forest,
         elevation: 0.5,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Kartu Form Input
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppPalette.surface,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Detail Destinasi & Aktivitas',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
-                      ),
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.place_rounded,
+                          size: 20,
+                          color: AppPalette.forest,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Tujuan & kegiatan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppPalette.deepGreen,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Input Destinasi
+                    const SizedBox(height: 18),
                     TextFormField(
                       controller: _destinationController,
-                      decoration: InputDecoration(
-                        labelText: 'Destinasi Wisata',
-                        hintText: 'Misal: Pulau Padar / Pink Beach',
-                        prefixIcon: const Icon(
-                          Icons.place,
-                          color: Color(0xFF0D5C3A),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      textCapitalization: TextCapitalization.words,
+                      decoration: _inputDecoration(
+                        label: 'Destinasi wisata',
+                        icon: Icons.location_on_outlined,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -277,21 +329,13 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-
-                    // Input Aktivitas
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _activityController,
-                      decoration: InputDecoration(
-                        labelText: 'Rencana Kegiatan',
-                        hintText: 'Misal: Trekking Sunrise & Foto',
-                        prefixIcon: const Icon(
-                          Icons.directions_walk,
-                          color: Color(0xFF0D5C3A),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: _inputDecoration(
+                        label: 'Apa yang ingin dilakukan?',
+                        icon: Icons.hiking_rounded,
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -300,22 +344,14 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 16),
-
-                    // Input Anggaran (Budget)
+                    const SizedBox(height: 14),
                     TextFormField(
                       controller: _budgetController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Estimasi Biaya (Rp)',
-                        hintText: 'Misal: 350000',
-                        prefixIcon: const Icon(
-                          Icons.payments_outlined,
-                          color: Color(0xFF0D5C3A),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                      decoration: _inputDecoration(
+                        label: 'Perkiraan biaya',
+                        icon: Icons.payments_outlined,
+                        prefixText: 'Rp ',
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -333,17 +369,16 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
 
               const SizedBox(height: 20),
 
-              // Kartu Waktu & Pengingat Notifikasi
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  color: AppPalette.surface,
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -353,111 +388,135 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                     const Row(
                       children: [
                         Icon(
-                          Icons.notifications_active_outlined,
+                          Icons.calendar_month_rounded,
                           size: 20,
-                          color: Color(0xFF0D5C3A),
+                          color: AppPalette.forest,
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'Jadwal & Pengingat Notifikasi',
+                          'Waktu perjalanan',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1F2937),
+                            color: AppPalette.deepGreen,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-
-                    // Pilih Tanggal
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0x150D5C3A),
-                        child: Icon(
-                          Icons.calendar_month,
-                          color: Color(0xFF0D5C3A),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _dateTimeCard(
+                            icon: Icons.calendar_today_rounded,
+                            label: 'Tanggal',
+                            value: dateFormat.format(_selectedDate),
+                            onTap: _pickDate,
+                          ),
                         ),
-                      ),
-                      title: const Text(
-                        'Tanggal Pelaksanaan',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      subtitle: Text(
-                        dateFormat.format(_selectedDate),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _dateTimeCard(
+                            icon: Icons.schedule_rounded,
+                            label: 'Waktu setempat',
+                            value: '${timeFormat.format(_selectedDate)} WITA',
+                            onTap: _pickTime,
+                          ),
                         ),
-                      ),
-                      trailing: TextButton(
-                        onPressed: _pickDate,
-                        child: const Text('Ubah'),
-                      ),
+                      ],
                     ),
-                    const Divider(),
-
-                    // Pilih Jam
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const CircleAvatar(
-                        backgroundColor: Color(0x150D5C3A),
-                        child: Icon(
-                          Icons.access_time,
-                          color: Color(0xFF0D5C3A),
-                        ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
-                      title: const Text(
-                        'Waktu Keberangkatan',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      decoration: BoxDecoration(
+                        color: AppPalette.ivory.withOpacity(0.65),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      subtitle: Text(
-                        '${timeFormat.format(_selectedDate)} WITA',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                      trailing: TextButton(
-                        onPressed: _pickTime,
-                        child: const Text('Ubah'),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.notifications_active_outlined,
+                            size: 18,
+                            color: AppPalette.forest,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Kami akan mengingatkanmu sebelum berangkat.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppPalette.deepGreen,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Tombol Simpan
-              ElevatedButton.icon(
-                onPressed: _saveItinerary,
-                icon: const Icon(Icons.check_circle_outline),
-                label: Text(
-                  _isEditMode
-                      ? 'Simpan Perubahan Jadwal'
-                      : 'Tambahkan ke Itinerary',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 54,
+                child: ElevatedButton.icon(
+                  onPressed: _saveItinerary,
+                  icon: const Icon(Icons.check_rounded),
+                  label: Text(
+                    _isEditMode ? 'Simpan perubahan' : 'Simpan rencana',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0D5C3A),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppPalette.forest,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 2,
                   ),
-                  elevation: 2,
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    String? prefixText,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide.none,
+    );
+
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: AppPalette.forest),
+      prefixText: prefixText,
+      filled: true,
+      fillColor: AppPalette.ivory.withOpacity(0.48),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppPalette.sage, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
     );
   }

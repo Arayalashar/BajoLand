@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../theme/app_palette.dart';
 import 'explore_screen.dart';
 import 'itinerary_screen.dart';
 import 'lbs_screen.dart';
@@ -44,6 +45,15 @@ class _RootScreenState extends State<RootScreen> {
     super.dispose();
   }
 
+  Widget _tabIcon(int index, IconData icon) {
+    return AnimatedScale(
+      scale: _controller.selectedIndex.value == index ? 1.12 : 1,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutBack,
+      child: Icon(icon),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(
@@ -67,8 +77,8 @@ class _RootScreenState extends State<RootScreen> {
             onTap: _controller.selectTab,
             type: BottomNavigationBarType.fixed,
             backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF0D5C3A),
-            unselectedItemColor: Colors.grey.shade500,
+            selectedItemColor: const Color(0xFF375534),
+            unselectedItemColor: AppPalette.sage,
             selectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 12,
@@ -77,26 +87,26 @@ class _RootScreenState extends State<RootScreen> {
               fontWeight: FontWeight.normal,
               fontSize: 12,
             ),
-            items: const [
+            items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.explore_outlined),
-                activeIcon: Icon(Icons.explore),
-                label: 'Explore',
+                icon: _tabIcon(0, Icons.explore_outlined),
+                activeIcon: _tabIcon(0, Icons.explore_rounded),
+                label: 'Jelajah',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today_outlined),
-                activeIcon: Icon(Icons.calendar_month),
-                label: 'Itinerary',
+                icon: _tabIcon(1, Icons.calendar_today_outlined),
+                activeIcon: _tabIcon(1, Icons.calendar_month_rounded),
+                label: 'Rencana',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.radar_outlined),
-                activeIcon: Icon(Icons.radar),
-                label: 'Radar Bajo',
+                icon: _tabIcon(2, Icons.near_me_outlined),
+                activeIcon: _tabIcon(2, Icons.near_me_rounded),
+                label: 'Sekitar',
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'Profil',
+                icon: _tabIcon(3, Icons.person_outline),
+                activeIcon: _tabIcon(3, Icons.account_circle_rounded),
+                label: 'Akun',
               ),
             ],
           ),

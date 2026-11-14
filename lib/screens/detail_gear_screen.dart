@@ -38,14 +38,14 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: const Color(0xFFE3EED4),
       appBar: AppBar(
         title: const Text(
           'Detail Destinasi',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0D5C3A),
+        foregroundColor: const Color(0xFF375534),
         elevation: 0.5,
       ),
       body: FutureBuilder<DestinasiModel>(
@@ -53,7 +53,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0D5C3A)),
+              child: CircularProgressIndicator(color: Color(0xFF375534)),
             );
           }
 
@@ -75,7 +75,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                       });
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D5C3A),
+                      backgroundColor: const Color(0xFF375534),
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Coba Lagi'),
@@ -131,7 +131,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF0D5C3A).withOpacity(0.1),
+                              color: const Color(0xFF6B9071).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -139,7 +139,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF0D5C3A),
+                                color: Color(0xFF375534),
                               ),
                             ),
                           ),
@@ -156,7 +156,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
-                                  color: Color(0xFF1F2937),
+                                  color: Color(0xFF0F2A1D),
                                 ),
                               ),
                             ],
@@ -171,7 +171,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
+                          color: Color(0xFF0F2A1D),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -204,7 +204,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0D5C3A),
+                          color: Color(0xFF375534),
                         ),
                       ),
                       Text(
@@ -222,7 +222,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF374151),
+                          color: Color(0xFF0F2A1D),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -250,9 +250,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                             );
                           },
                           icon: const Icon(Icons.calendar_month),
-                          label: const Text('Jadwalkan ke Itinerary Saya'),
+                          label: const Text('Tambah ke Rencana'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0D5C3A),
+                            backgroundColor: const Color(0xFF375534),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(

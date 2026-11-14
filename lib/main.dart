@@ -10,6 +10,7 @@ import 'models/itinerary_item.dart';
 import 'screens/login_screen.dart';
 import 'screens/root_screen.dart';
 import 'services/notification_service.dart';
+import 'theme/app_palette.dart';
 
 void main() async {
   // 1. Memastikan binding Flutter siap sebelum inisialisasi async
@@ -36,7 +37,7 @@ void main() async {
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.white,
+      systemNavigationBarColor: AppPalette.ivory,
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
@@ -57,7 +58,7 @@ class BajoLandApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF0D5C3A);
+    const primaryColor = AppPalette.forest;
 
     return GetMaterialApp(
       title: 'BajoLand',
@@ -69,7 +70,7 @@ class BajoLandApp extends StatelessWidget {
           seedColor: primaryColor,
           primary: primaryColor,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF9F7F2),
+        scaffoldBackgroundColor: AppPalette.ivory,
         textTheme: GoogleFonts.plusJakartaSansTextTheme(
           Theme.of(context).textTheme,
         ),
@@ -78,6 +79,10 @@ class BajoLandApp extends StatelessWidget {
           foregroundColor: primaryColor,
           elevation: 0.5,
           centerTitle: false,
+        ),
+        snackBarTheme: const SnackBarThemeData(
+          backgroundColor: AppPalette.deepGreen,
+          behavior: SnackBarBehavior.floating,
         ),
       ),
       // Alur Awal: Jika sudah login langsung ke RootScreen, jika belum ke LoginScreen

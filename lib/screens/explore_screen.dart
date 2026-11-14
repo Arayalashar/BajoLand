@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -17,12 +18,19 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   late Future<List<DestinasiModel>> _destinasiFuture;
+  final ScrollController _favoriteController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     // Modul 5: Memanggil ApiService.getDestinasi() via HTTP GET
     _loadDestinasi();
+  }
+
+  @override
+  void dispose() {
+    _favoriteController.dispose();
+    super.dispose();
   }
 
   void _loadDestinasi() {
@@ -43,30 +51,32 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: const Color(0xFFE3EED4),
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.sailing_rounded, color: Color(0xFF0D5C3A)),
-            SizedBox(width: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(8)),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+              ),
+            ),
+            const SizedBox(width: 10),
             Text(
-              'Explore BajoLand',
+              'Jelajah Labuan Bajo',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0D5C3A),
+                color: Color(0xFF375534),
               ),
             ),
           ],
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF0D5C3A)),
-            tooltip: 'Refresh Katalog',
-            onPressed: _loadDestinasi,
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -79,11 +89,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Destinasi Populer Bajo',
+                    'Favorit di Labuan Bajo',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
+                      color: Color(0xFF0F2A1D),
                     ),
                   ),
                   Text(
@@ -99,14 +109,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
             SizedBox(
               height: 180,
-              child: ListView.builder(
+              child: ScrollConfiguration(
+                behavior: const _FavoriteScrollBehavior(),
+                child: ListView.builder(
+                controller: _favoriteController,
+                primary: false,
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
                 itemCount: bajoDestinations.length,
                 itemBuilder: (context, index) {
                   final dest = bajoDestinations[index];
                   return Container(
-                    width: 240,
+                    width: 260,
                     margin: const EdgeInsets.symmetric(
                       horizontal: 6,
                       vertical: 4,
@@ -131,7 +147,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             dest.imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              color: const Color(0xFF0D5C3A),
+                              color: const Color(0xFF375534),
                               child: const Icon(
                                 Icons.landscape,
                                 color: Colors.white,
@@ -183,6 +199,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ),
                   );
                 },
+                ),
               ),
             ),
 
@@ -193,33 +210,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  const Icon(Icons.explore, size: 20, color: Color(0xFF0D5C3A)),
+                  const Icon(
+                    Icons.explore_rounded,
+                    size: 20,
+                    color: Color(0xFF375534),
+                  ),
                   const SizedBox(width: 8),
                   const Text(
-                    'Katalog Wisata (REST API)',
+                    'Pilihan Destinasi',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0D5C3A).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'Live API Online',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0D5C3A),
-                      ),
+                      color: Color(0xFF0F2A1D),
                     ),
                   ),
                 ],
@@ -236,7 +238,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF0D5C3A),
+                        color: Color(0xFF375534),
                       ),
                     ),
                   );
@@ -263,7 +265,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ElevatedButton(
                             onPressed: _loadDestinasi,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0D5C3A),
+                              backgroundColor: const Color(0xFF375534),
                               foregroundColor: Colors.white,
                             ),
                             child: const Text('Muat Ulang'),
@@ -356,7 +358,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
-                                      color: Color(0xFF1F2937),
+                                      color: Color(0xFF0F2A1D),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -375,7 +377,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13,
-                                      color: Color(0xFF0D5C3A),
+                                      color: Color(0xFF375534),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -414,4 +416,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
     );
   }
+}
+
+class _FavoriteScrollBehavior extends MaterialScrollBehavior {
+  const _FavoriteScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+    PointerDeviceKind.stylus,
+    PointerDeviceKind.trackpad,
+  };
 }

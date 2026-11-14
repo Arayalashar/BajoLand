@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
+import '../theme/app_palette.dart';
 import 'root_screen.dart';
 
 /// Halaman Login Autentikasi Pengguna (Modul 2, 3, 4, 6)
@@ -73,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Selamat datang di BajoLand, ${user.fullName}!'),
-            backgroundColor: const Color(0xFF0D5C3A),
+            backgroundColor: const Color(0xFF375534),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -103,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _inputField({
     required TextEditingController controller,
     required String labelText,
-    required String hintText,
     required IconData prefixIcon,
     bool isPassword = false,
   }) {
@@ -119,8 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
       },
       decoration: InputDecoration(
         labelText: labelText,
-        hintText: hintText,
-        prefixIcon: Icon(prefixIcon, color: const Color(0xFF0D5C3A)),
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF375534)),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
@@ -151,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(
-            color: _isLoginFailed ? Colors.red : const Color(0xFF0D5C3A),
+            color: _isLoginFailed ? Colors.red : const Color(0xFF375534),
             width: 2.0,
           ),
         ),
@@ -162,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: AppPalette.ivory,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -171,33 +170,14 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header Logo & Branding BajoLand
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D5C3A).withOpacity(0.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.sailing_rounded,
-                    size: 64,
-                    color: Color(0xFF0D5C3A),
-                  ),
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 220,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'BajoLand',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    color: Color(0xFF0D5C3A),
-                  ),
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 18),
                 Text(
-                  'Perencana Itinerary & Anggaran Wisata Labuan Bajo',
+                  'Rencanakan perjalananmu di Labuan Bajo',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                 ),
@@ -206,15 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Form Login
                 _inputField(
                   controller: _usernameController,
-                  labelText: 'Username',
-                  hintText: 'Masukkan username (misal: arya)',
+                  labelText: 'Nama pengguna',
                   prefixIcon: Icons.person_outline,
                 ),
                 const SizedBox(height: 16),
                 _inputField(
                   controller: _passwordController,
-                  labelText: 'Password',
-                  hintText: 'Masukkan password (misal: 123)',
+                  labelText: 'Kata sandi',
                   prefixIcon: Icons.lock_outline,
                   isPassword: true,
                 ),
@@ -223,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_isLoginFailed) ...[
                   const SizedBox(height: 10),
                   const Text(
-                    '* Kredensial tidak valid. Silakan periksa kembali.',
+                    'Nama pengguna atau kata sandi belum sesuai.',
                     style: TextStyle(
                       color: Colors.red,
                       fontSize: 12,
@@ -238,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleLogin,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0D5C3A),
+                    backgroundColor: const Color(0xFF375534),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -258,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         )
                       : const Text(
-                          'Masuk ke BajoLand',
+                          'Masuk',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -266,36 +244,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
 
-                const SizedBox(height: 24),
-                // Petunjuk Akun Demo
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '💡 Akun Demo Praktikum:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Username: arya  |  Password: 123',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),

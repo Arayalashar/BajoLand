@@ -86,13 +86,13 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F7F2),
+      backgroundColor: const Color(0xFFE3EED4),
       appBar: AppBar(
         title: const Text(
-          'Itinerary & Anggaran',
+          'Rencana & Anggaran',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0D5C3A),
+            color: Color(0xFF375534),
           ),
         ),
         backgroundColor: Colors.white,
@@ -122,12 +122,12 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                   // Dynamic Background: Merah jika Overbudget, Hijau Gelap jika Aman
                   color: isOverbudget
                       ? const Color(0xFFC53030)
-                      : const Color(0xFF0D5C3A),
+                      : const Color(0xFF375534),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color:
-                          (isOverbudget ? Colors.red : const Color(0xFF0D5C3A))
+                          (isOverbudget ? Colors.red : const Color(0xFF375534))
                               .withOpacity(0.25),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
@@ -254,11 +254,11 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Daftar Jadwal Perjalanan',
+                      'Rencana Perjalanan',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1F2937),
+                        color: Color(0xFF0F2A1D),
                       ),
                     ),
                     Text(
@@ -333,13 +333,13 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                               leading: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0D5C3A)
+                                  color: const Color(0xFF375534)
                                       .withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
                                   Icons.place,
-                                  color: Color(0xFF0D5C3A),
+                                  color: Color(0xFF375534),
                                 ),
                               ),
                               title: Text(
@@ -347,7 +347,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: Color(0xFF1F2937),
+                                  color: Color(0xFF0F2A1D),
                                 ),
                               ),
                               subtitle: Column(
@@ -390,7 +390,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
-                                      color: Color(0xFF0D5C3A),
+                                      color: Color(0xFF375534),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -452,10 +452,10 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
         onPressed: () {
           Get.to(() => const AddItineraryScreen());
         },
-        backgroundColor: const Color(0xFF0D5C3A),
+        backgroundColor: const Color(0xFF375534),
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Tambah Jadwal'),
+        label: const Text('Buat Rencana'),
       ),
     );
   }
