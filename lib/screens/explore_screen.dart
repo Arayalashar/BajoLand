@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../api/api_service.dart';
 import '../data/bajo_locations.dart';
 import '../models/destinasi_model.dart';
@@ -105,7 +107,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   final dest = bajoDestinations[index];
                   return Container(
                     width: 240,
-                    margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
@@ -127,7 +132,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: const Color(0xFF0D5C3A),
-                              child: const Icon(Icons.landscape, color: Colors.white),
+                              child: const Icon(
+                                Icons.landscape,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                           Container(
@@ -197,7 +205,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D5C3A).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
@@ -237,7 +248,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     child: Center(
                       child: Column(
                         children: [
-                          const Icon(Icons.cloud_off, size: 48, color: Colors.orange),
+                          const Icon(
+                            Icons.cloud_off,
+                            size: 48,
+                            color: Colors.orange,
+                          ),
                           const SizedBox(height: 10),
                           Text(
                             'Gagal mengambil data dari API: ${snapshot.error}',
@@ -274,7 +289,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 return GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 12,
@@ -287,13 +305,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     return GestureDetector(
                       // Modul 4: Passing Data via Constructor ke DetailScreen
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DetailGearScreen(productId: item.id),
-                          ),
-                        );
+                        Get.to(() => DetailGearScreen(productId: item.id));
                       },
                       child: Container(
                         decoration: BoxDecoration(
@@ -323,8 +335,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Container(
                                       color: Colors.grey.shade200,
-                                      child: const Icon(Icons.landscape,
-                                          color: Colors.grey),
+                                      child: const Icon(
+                                        Icons.landscape,
+                                        color: Colors.grey,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -367,8 +381,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.star,
-                                          size: 13, color: Colors.amber),
+                                      const Icon(
+                                        Icons.star,
+                                        size: 13,
+                                        color: Colors.amber,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         '${item.rating}',

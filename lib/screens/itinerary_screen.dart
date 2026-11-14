@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/itinerary_item.dart';
 import 'add_itinerary_screen.dart';
 
@@ -40,7 +42,12 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
   }
 
   /// Dialog konfirmasi hapus item dari Hive
-  void _confirmDelete(BuildContext context, Box<ItineraryItem> box, int index, String title) {
+  void _confirmDelete(
+    BuildContext context,
+    Box<ItineraryItem> box,
+    int index,
+    String title,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -113,12 +120,15 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   // Dynamic Background: Merah jika Overbudget, Hijau Gelap jika Aman
-                  color: isOverbudget ? const Color(0xFFC53030) : const Color(0xFF0D5C3A),
+                  color: isOverbudget
+                      ? const Color(0xFFC53030)
+                      : const Color(0xFF0D5C3A),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: (isOverbudget ? Colors.red : const Color(0xFF0D5C3A))
-                          .withOpacity(0.25),
+                      color:
+                          (isOverbudget ? Colors.red : const Color(0xFF0D5C3A))
+                              .withOpacity(0.25),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -142,7 +152,10 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
@@ -233,7 +246,10 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
 
               // ─── Header Daftar Itinerary
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 4,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -263,7 +279,11 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.event_note, size: 64, color: Colors.grey.shade400),
+                            Icon(
+                              Icons.event_note,
+                              size: 64,
+                              color: Colors.grey.shade400,
+                            ),
                             const SizedBox(height: 12),
                             Text(
                               'Belum ada jadwal perjalanan di BajoLand.',
@@ -285,7 +305,10 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         itemCount: items.length,
                         itemBuilder: (context, index) {
                           final item = items[index];
@@ -310,7 +333,8 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                               leading: Container(
                                 padding: const EdgeInsets.all(10),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0D5C3A).withOpacity(0.1),
+                                  color: const Color(0xFF0D5C3A)
+                                      .withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -340,8 +364,11 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      const Icon(Icons.access_time,
-                                          size: 13, color: Colors.grey),
+                                      const Icon(
+                                        Icons.access_time,
+                                        size: 13,
+                                        color: Colors.grey,
+                                      ),
                                       const SizedBox(width: 4),
                                       Text(
                                         dateFormat.format(item.scheduledDate),
@@ -373,20 +400,20 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                                       // Tombol Edit (Modul 4 & 6)
                                       InkWell(
                                         onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => AddItineraryScreen(
-                                                item: item,
-                                                index: index,
-                                              ),
+                                          Get.to(
+                                            () => AddItineraryScreen(
+                                              item: item,
+                                              index: index,
                                             ),
                                           );
                                         },
                                         child: const Padding(
                                           padding: EdgeInsets.all(4.0),
-                                          child: Icon(Icons.edit,
-                                              size: 18, color: Colors.blueGrey),
+                                          child: Icon(
+                                            Icons.edit,
+                                            size: 18,
+                                            color: Colors.blueGrey,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -400,8 +427,11 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
                                         ),
                                         child: const Padding(
                                           padding: EdgeInsets.all(4.0),
-                                          child: Icon(Icons.delete_outline,
-                                              size: 18, color: Colors.redAccent),
+                                          child: Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: Colors.redAccent,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -420,13 +450,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
       // Floating Action Button (+) Tambah Jadwal Baru
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Modul 4: Navigator.push ke form tambah
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddItineraryScreen(),
-            ),
-          );
+          Get.to(() => const AddItineraryScreen());
         },
         backgroundColor: const Color(0xFF0D5C3A),
         foregroundColor: Colors.white,
@@ -436,4 +460,3 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     );
   }
 }
-

@@ -18,6 +18,7 @@ Proyek ini mengintegrasikan seluruh materi praktikum **Teknologi dan Pemrograman
 6. **Modul 7 (Notification & LBS):**
    - `flutter_local_notifications`: *Immediate Notification* saat jadwal disimpan, dan *Scheduled Notification* sesuai tanggal & jam keberangkatan.
    - `geolocator`: Mengambil koordinat GPS pengguna, menghitung jarak ke 5 destinasi Labuan Bajo (`Pulau Padar`, `Pink Beach`, `Pulau Komodo`, `Dermaga Kampung Ujung`, `Bandara Komodo`), mengurutkan dari terdekat, dan menandai lokasi $< 500\text{ m}$.
+7. **GetX:** Navigasi halaman menggunakan `GetMaterialApp`, `Get.to`, `Get.offAll`, dan `Get.back`, serta state tab utama yang reaktif dengan `GetxController`/`Obx`.
 
 ---
 

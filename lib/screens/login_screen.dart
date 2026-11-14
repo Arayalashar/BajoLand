@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/user_model.dart';
 import 'root_screen.dart';
 
@@ -39,13 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final String savedName = prefs.getString('userName') ?? 'Wisatawan Bajo';
 
     if (isLoggedIn && mounted) {
-      // Modul 4: Navigator.pushReplacement
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => RootScreen(userName: savedName),
-        ),
-      );
+      Get.offAll(() => RootScreen(userName: savedName));
     }
   }
 
@@ -82,13 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        // Modul 4: Navigator.pushReplacement dengan passing data via constructor
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RootScreen(userName: user.fullName),
-          ),
-        );
+        Get.offAll(() => RootScreen(userName: user.fullName));
       }
     } else {
       // Modul 3: Dynamic Styling (border merah) & Error Handling
@@ -146,8 +136,10 @@ class _LoginScreenState extends State<LoginScreen> {
             : null,
         filled: true,
         fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         // Dynamic Styling: Border berubah menjadi merah saat gagal login
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -207,10 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Perencana Itinerary & Anggaran Wisata Labuan Bajo',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade700,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                 ),
                 const SizedBox(height: 36),
 
@@ -263,8 +252,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text(
@@ -314,4 +304,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

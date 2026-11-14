@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+
 import '../api/api_service.dart';
 import '../models/destinasi_model.dart';
 import 'add_itinerary_screen.dart';
@@ -8,10 +10,7 @@ import 'add_itinerary_screen.dart';
 class DetailGearScreen extends StatefulWidget {
   final int productId;
 
-  const DetailGearScreen({
-    super.key,
-    required this.productId,
-  });
+  const DetailGearScreen({super.key, required this.productId});
 
   @override
   State<DetailGearScreen> createState() => _DetailGearScreenState();
@@ -54,9 +53,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF0D5C3A),
-              ),
+              child: CircularProgressIndicator(color: Color(0xFF0D5C3A)),
             );
           }
 
@@ -72,8 +69,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                   ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _destinasiFuture =
-                            ApiService.getDestinasiDetail(widget.productId);
+                        _destinasiFuture = ApiService.getDestinasiDetail(
+                          widget.productId,
+                        );
                       });
                     },
                     style: ElevatedButton.styleFrom(
@@ -103,7 +101,11 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                       dest.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(Icons.landscape, size: 64, color: Colors.grey),
+                        child: Icon(
+                          Icons.landscape,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -112,7 +114,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                   padding: const EdgeInsets.all(24),
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +127,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: const Color(0xFF0D5C3A).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(6),
@@ -139,7 +145,11 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.star, color: Colors.amber, size: 18),
+                              const Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 '${dest.rating} / 5.0',
@@ -169,7 +179,11 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                       // Lokasi
                       Row(
                         children: [
-                          const Icon(Icons.place, size: 16, color: Colors.redAccent),
+                          const Icon(
+                            Icons.place,
+                            size: 16,
+                            color: Colors.redAccent,
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -228,13 +242,10 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         child: ElevatedButton.icon(
                           onPressed: () {
                             // Modul 4: Navigasi ke AddItineraryScreen dengan data pre-filled
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AddItineraryScreen(
-                                  initialDestination: dest.name,
-                                  initialBudget: dest.ticketPrice,
-                                ),
+                            Get.to(
+                              () => AddItineraryScreen(
+                                initialDestination: dest.name,
+                                initialBudget: dest.ticketPrice,
                               ),
                             );
                           },

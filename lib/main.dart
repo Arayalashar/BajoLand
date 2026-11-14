@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -40,12 +41,7 @@ void main() async {
     ),
   );
 
-  runApp(
-    BajoLandApp(
-      isLoggedIn: isLoggedIn,
-      userName: savedName,
-    ),
-  );
+  runApp(BajoLandApp(isLoggedIn: isLoggedIn, userName: savedName));
 }
 
 /// Root Widget Aplikasi BajoLand (Modul 2: MaterialApp, Theme, ColorScheme)
@@ -63,9 +59,10 @@ class BajoLandApp extends StatelessWidget {
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF0D5C3A);
 
-    return MaterialApp(
+    return GetMaterialApp(
       title: 'BajoLand',
       debugShowCheckedModeBanner: false,
+      defaultTransition: Transition.native,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
@@ -84,9 +81,7 @@ class BajoLandApp extends StatelessWidget {
         ),
       ),
       // Alur Awal: Jika sudah login langsung ke RootScreen, jika belum ke LoginScreen
-      home: isLoggedIn
-          ? RootScreen(userName: userName)
-          : const LoginScreen(),
+      home: isLoggedIn ? RootScreen(userName: userName) : const LoginScreen(),
     );
   }
 }

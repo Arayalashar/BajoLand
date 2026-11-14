@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+
 import '../models/itinerary_item.dart';
 import '../services/notification_service.dart';
 
@@ -50,8 +52,8 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
       text: widget.item != null
           ? widget.item!.budget.toStringAsFixed(0)
           : (widget.initialBudget != null
-              ? widget.initialBudget!.toStringAsFixed(0)
-              : ''),
+                ? widget.initialBudget!.toStringAsFixed(0)
+                : ''),
     );
 
     if (widget.item != null) {
@@ -168,8 +170,9 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     }
 
     // Modul 7: Pemicu Notifikasi Langsung (Immediate) & Terjadwal (Scheduled)
-    final notificationId =
-        _isEditMode ? widget.index! + 100 : DateTime.now().millisecondsSinceEpoch % 100000;
+    final notificationId = _isEditMode
+        ? widget.index! + 100
+        : DateTime.now().millisecondsSinceEpoch % 100000;
 
     // 1. Notifikasi Langsung Konfirmasi
     await NotificationService.instance.showInstantNotification(
@@ -199,8 +202,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
           backgroundColor: const Color(0xFF0D5C3A),
         ),
       );
-      // Modul 4: Navigator.pop untuk kembali ke daftar
-      Navigator.pop(context);
+      Get.back();
     }
   }
 
@@ -260,7 +262,10 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                       decoration: InputDecoration(
                         labelText: 'Destinasi Wisata',
                         hintText: 'Misal: Pulau Padar / Pink Beach',
-                        prefixIcon: const Icon(Icons.place, color: Color(0xFF0D5C3A)),
+                        prefixIcon: const Icon(
+                          Icons.place,
+                          color: Color(0xFF0D5C3A),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -280,7 +285,10 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                       decoration: InputDecoration(
                         labelText: 'Rencana Kegiatan',
                         hintText: 'Misal: Trekking Sunrise & Foto',
-                        prefixIcon: const Icon(Icons.directions_walk, color: Color(0xFF0D5C3A)),
+                        prefixIcon: const Icon(
+                          Icons.directions_walk,
+                          color: Color(0xFF0D5C3A),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -301,7 +309,10 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                       decoration: InputDecoration(
                         labelText: 'Estimasi Biaya (Rp)',
                         hintText: 'Misal: 350000',
-                        prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF0D5C3A)),
+                        prefixIcon: const Icon(
+                          Icons.payments_outlined,
+                          color: Color(0xFF0D5C3A),
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -341,8 +352,11 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.notifications_active_outlined,
-                            size: 20, color: Color(0xFF0D5C3A)),
+                        Icon(
+                          Icons.notifications_active_outlined,
+                          size: 20,
+                          color: Color(0xFF0D5C3A),
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Jadwal & Pengingat Notifikasi',
@@ -361,10 +375,15 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                       contentPadding: EdgeInsets.zero,
                       leading: const CircleAvatar(
                         backgroundColor: Color(0x150D5C3A),
-                        child: Icon(Icons.calendar_month, color: Color(0xFF0D5C3A)),
+                        child: Icon(
+                          Icons.calendar_month,
+                          color: Color(0xFF0D5C3A),
+                        ),
                       ),
-                      title: const Text('Tanggal Pelaksanaan',
-                          style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      title: const Text(
+                        'Tanggal Pelaksanaan',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
                       subtitle: Text(
                         dateFormat.format(_selectedDate),
                         style: const TextStyle(
@@ -385,10 +404,15 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                       contentPadding: EdgeInsets.zero,
                       leading: const CircleAvatar(
                         backgroundColor: Color(0x150D5C3A),
-                        child: Icon(Icons.access_time, color: Color(0xFF0D5C3A)),
+                        child: Icon(
+                          Icons.access_time,
+                          color: Color(0xFF0D5C3A),
+                        ),
                       ),
-                      title: const Text('Waktu Keberangkatan',
-                          style: TextStyle(fontSize: 13, color: Colors.grey)),
+                      title: const Text(
+                        'Waktu Keberangkatan',
+                        style: TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
                       subtitle: Text(
                         '${timeFormat.format(_selectedDate)} WITA',
                         style: const TextStyle(
@@ -413,8 +437,13 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                 onPressed: _saveItinerary,
                 icon: const Icon(Icons.check_circle_outline),
                 label: Text(
-                  _isEditMode ? 'Simpan Perubahan Jadwal' : 'Tambahkan ke Itinerary',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  _isEditMode
+                      ? 'Simpan Perubahan Jadwal'
+                      : 'Tambahkan ke Itinerary',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0D5C3A),
@@ -433,4 +462,3 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     );
   }
 }
-

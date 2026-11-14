@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/itinerary_item.dart';
 import 'login_screen.dart';
 
@@ -9,10 +11,7 @@ import 'login_screen.dart';
 class ProfileScreen extends StatefulWidget {
   final String userName;
 
-  const ProfileScreen({
-    super.key,
-    required this.userName,
-  });
+  const ProfileScreen({super.key, required this.userName});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -83,7 +82,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              final newBudget = double.tryParse(_budgetDialogController.text.trim());
+              final newBudget = double.tryParse(
+                _budgetDialogController.text.trim(),
+              );
               if (newBudget != null && newBudget > 0) {
                 Navigator.pop(ctx);
                 _updateMaxBudget(newBudget);
@@ -113,12 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
 
-      // Modul 4: pushAndRemoveUntil menghapus seluruh history navigation stack
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
+      Get.offAll(() => const LoginScreen());
     }
   }
 
@@ -186,7 +182,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF0D5C3A).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -208,7 +207,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // ─── Statistik Perjalanan & Hive ValueListenable
             ValueListenableBuilder<Box<ItineraryItem>>(
-              valueListenable: Hive.box<ItineraryItem>('itineraries').listenable(),
+              valueListenable: Hive.box<ItineraryItem>('itineraries')
+                  .listenable(),
               builder: (context, box, _) {
                 final totalItems = box.length;
                 double totalSpent = 0.0;
@@ -234,8 +234,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.event_available,
-                                color: Color(0xFF0D5C3A), size: 28),
+                            const Icon(
+                              Icons.event_available,
+                              color: Color(0xFF0D5C3A),
+                              size: 28,
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               '$totalItems',
@@ -248,7 +251,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const Text(
                               'Destinasi Dijadwalkan',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -271,8 +277,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: Column(
                           children: [
-                            const Icon(Icons.account_balance_wallet,
-                                color: Color(0xFF0D5C3A), size: 28),
+                            const Icon(
+                              Icons.account_balance_wallet,
+                              color: Color(0xFF0D5C3A),
+                              size: 28,
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               _formatRupiah(totalSpent),
@@ -287,7 +296,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const Text(
                               'Alokasi Anggaran',
                               textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 11, color: Colors.grey),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
                             ),
                           ],
                         ),
@@ -332,15 +344,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Icon(Icons.info_outline, color: Color(0xFF0D5C3A)),
                     ),
                     title: const Text('Tentang BajoLand'),
-                    subtitle: const Text('Integrasi Modul 2 - Modul 7 Praktikum TPM'),
+                    subtitle: const Text(
+                      'Integrasi Modul 2 - Modul 7 Praktikum TPM',
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       showAboutDialog(
                         context: context,
                         applicationName: 'BajoLand',
                         applicationVersion: '1.0.0',
-                        applicationLegalese:
-                            'Aplikasi Perencana Itinerary dan Manajemen Anggaran Wisata di Labuan Bajo.',
+                        applicationLegalese: 'Aplikasi Perencana Itinerary dan Manajemen Anggaran Wisata di Labuan Bajo.',
                       );
                     },
                   ),
@@ -406,4 +419,3 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
-
