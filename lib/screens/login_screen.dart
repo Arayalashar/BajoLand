@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/user_model.dart';
+import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
+import 'register_screen.dart';
 import 'root_screen.dart';
 
 /// Halaman Login Autentikasi Pengguna (Modul 2, 3, 4, 6)
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Proses validasi dan eksekusi login
   Future<void> _handleLogin() async {
     final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+    final password = _passwordController.text;
 
     setState(() {
       _isLoading = true;
@@ -58,8 +59,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // Modul 3: Validasi menggunakan model class
-    final user = UserModel.authenticate(username, password);
+    // Modul 6: Validasi akun demo atau akun yang tersimpan secara lokal.
+    final user = await UserStorage().authenticate(username, password);
 
     if (user != null) {
       // Modul 6: Simpan sesi login ke SharedPreferences
@@ -97,6 +98,16 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _openRegister() async {
+    final username = await Get.to<String>(() => const RegisterScreen());
+    if (username != null && mounted) {
+      _usernameController.text = username;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Akun berhasil dibuat. Silakan masuk.')),
+      );
     }
   }
 
@@ -186,13 +197,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Form Login
                 _inputField(
                   controller: _usernameController,
-                  labelText: 'Nama pengguna',
+                  labelText: 'Username',
                   prefixIcon: Icons.person_outline,
                 ),
                 const SizedBox(height: 16),
                 _inputField(
                   controller: _passwordController,
-                  labelText: 'Kata sandi',
+                  labelText: 'Password',
                   prefixIcon: Icons.lock_outline,
                   isPassword: true,
                 ),
@@ -201,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_isLoginFailed) ...[
                   const SizedBox(height: 10),
                   const Text(
-                    'Nama pengguna atau kata sandi belum sesuai.',
+                    'Username atau password belum sesuai.',
                     style: TextStyle(
                       color: Colors.red,
                       fontSize: 12,
@@ -244,6 +255,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
 
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: _isLoading ? null : _openRegister,
+                  child: const Text('Belum punya akun? Daftar'),
+                ),
               ],
             ),
           ),

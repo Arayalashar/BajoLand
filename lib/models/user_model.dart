@@ -10,6 +10,20 @@ class UserModel {
     required this.fullName,
   });
 
+  Map<String, String> toJson() => {
+    'username': username,
+    'password': password,
+    'fullName': fullName,
+  };
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      username: json['username'] as String,
+      password: json['password'] as String,
+      fullName: json['fullName'] as String,
+    );
+  }
+
   /// Daftar akun terdaftar default untuk pengujian praktikum
   static const List<UserModel> registeredUsers = [
     UserModel(
@@ -36,15 +50,6 @@ class UserModel {
           user.password == password) {
         return user;
       }
-    }
-    // Jika user memasukkan username selain di atas tetapi password tidak kosong,
-    // izinkan login dengan nama sesuai username agar fleksibel saat testing
-    if (username.trim().isNotEmpty && password.trim().isNotEmpty) {
-      return UserModel(
-        username: username.trim(),
-        password: password,
-        fullName: username.trim(),
-      );
     }
     return null;
   }
