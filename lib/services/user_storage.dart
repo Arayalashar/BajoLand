@@ -21,21 +21,23 @@ class UserStorage {
   }
 
   Future<bool> register(UserModel user) async {
-    final username = user.username.trim();
+    final account = (user.email.isNotEmpty ? user.email : user.username).trim();
     final fullName = user.fullName.trim();
-    if (username.isEmpty || fullName.isEmpty || user.password.isEmpty) {
+    if (account.isEmpty || fullName.isEmpty || user.password.isEmpty) {
       return false;
     }
 
-    final normalizedUsername = username.toLowerCase();
+    final normalized = account.toLowerCase();
     final existingUsers = await _loadUsers();
     final isDuplicate = UserModel.registeredUsers.any(
           (registeredUser) =>
-              registeredUser.username.toLowerCase() == normalizedUsername,
+              registeredUser.username.toLowerCase() == normalized ||
+              registeredUser.email.toLowerCase() == normalized,
         ) ||
         existingUsers.any(
           (registeredUser) =>
-              registeredUser.username.toLowerCase() == normalizedUsername,
+              registeredUser.username.toLowerCase() == normalized ||
+              registeredUser.email.toLowerCase() == normalized,
         );
 
     if (isDuplicate) return false;
@@ -43,7 +45,8 @@ class UserStorage {
     final prefs = await SharedPreferences.getInstance();
     existingUsers.add(
       UserModel(
-        username: username,
+        email: account,
+        username: account,
         password: user.password,
         fullName: fullName,
       ),
@@ -57,12 +60,11 @@ class UserStorage {
     return true;
   }
 
-  Future<UserModel?> authenticate(String username, String password) async {
-    final demoUser = UserModel.authenticate(username, password);
-    if (demoUser != null) return demoUser;
-
+  Future<UserModel?> authenticate(String identifier, String password) async {
+    final clean = identifier.trim().toLowerCase();
     for (final user in await _loadUsers()) {
-      if (user.username.toLowerCase() == username.trim().toLowerCase() &&
+      if ((user.email.toLowerCase() == clean ||
+              user.username.toLowerCase() == clean) &&
           user.password == password) {
         return user;
       }

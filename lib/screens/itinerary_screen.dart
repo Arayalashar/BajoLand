@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/itinerary_item.dart';
+import '../services/notification_service.dart';
+import '../theme/app_palette.dart';
+import '../utils/app_toast.dart';
+import '../utils/date_formatter.dart';
 import 'add_itinerary_screen.dart';
+import 'root_screen.dart';
 
-/// Halaman Itinerary & Manajemen Anggaran (Modul 2, 3, 6)
+/// Halaman Rundown Harian & Manajemen Anggaran Wisata (BajoLand)
 class ItineraryScreen extends StatefulWidget {
-  const ItineraryScreen({super.key});
+  final int? initialFilter;
+
+  const ItineraryScreen({super.key, this.initialFilter});
 
   @override
   State<ItineraryScreen> createState() => _ItineraryScreenState();
@@ -17,14 +25,31 @@ class ItineraryScreen extends StatefulWidget {
 
 class _ItineraryScreenState extends State<ItineraryScreen> {
   double _maxBudget = 5000000.0;
+  int _selectedFilter = 0; // 0: Semua, 1: Mendatang, 2: Selesai
 
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter ?? 0;
     _loadMaxBudget();
+
+    if (Get.isRegistered<RootNavigationController>()) {
+      final rootCtrl = Get.find<RootNavigationController>();
+      if (widget.initialFilter != null) {
+        rootCtrl.itineraryFilter.value = widget.initialFilter!;
+      } else {
+        _selectedFilter = rootCtrl.itineraryFilter.value;
+      }
+      ever(rootCtrl.itineraryFilter, (int val) {
+        if (mounted) {
+          setState(() {
+            _selectedFilter = val;
+          });
+        }
+      });
+    }
   }
 
-  /// Memuat batas anggaran dari SharedPreferences (Modul 6)
   Future<void> _loadMaxBudget() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -32,49 +57,89 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     });
   }
 
-  String _formatRupiah(double amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
+  Future<void> _saveMaxBudget(double newBudget) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('maxBudget', newBudget);
+    setState(() {
+      _maxBudget = newBudget;
+    });
+    await NotificationService.instance.showInstantNotification(
+      id: 9992,
+      title: 'Batas Anggaran Diperbarui',
+      body: 'Batas total anggaran liburan Anda sekarang ${_formatRupiah(newBudget)}.',
     );
-    return formatter.format(amount);
   }
 
-  /// Dialog konfirmasi hapus item dari Hive
-  void _confirmDelete(
-    BuildContext context,
-    Box<ItineraryItem> box,
-    int index,
-    String title,
-  ) {
+  String _formatRupiah(double amount) {
+    try {
+      final formatter = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      );
+      return formatter.format(amount);
+    } catch (_) {
+      return 'Rp ${amount.toStringAsFixed(0)}';
+    }
+  }
+
+  void _showSetBudgetDialog(BuildContext context) {
+    final controller = TextEditingController(text: _maxBudget.toStringAsFixed(0));
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hapus Jadwal?'),
-        content: Text('Apakah Anda yakin ingin menghapus jadwal "$title"?'),
+        shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+        backgroundColor: AppPalette.surface,
+        title: Text('Atur Batas Anggaran', style: AppPalette.h2()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tentukan batas maksimal pengeluaran untuk seluruh perjalanan liburan Anda di Labuan Bajo:',
+              style: AppPalette.caption(color: AppPalette.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                prefixText: 'Rp ',
+                labelText: 'Batas Anggaran (IDR)',
+                border: const OutlineInputBorder(borderRadius: AppPalette.radiusMd),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: AppPalette.radiusMd,
+                  borderSide: BorderSide(color: AppPalette.primary, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text('Batal', style: AppPalette.caption(color: AppPalette.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
-              // Modul 6: Hive deleteAt
-              box.deleteAt(index);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Jadwal "$title" berhasil dihapus.'),
-                  backgroundColor: Colors.redAccent,
-                ),
-              );
+              final val = double.tryParse(controller.text.trim());
+              if (val != null && val > 0) {
+                _saveMaxBudget(val);
+                Navigator.pop(ctx);
+                AppToast.success(
+                  'Anggaran Diperbarui',
+                  'Batas anggaran wisata diatur ke ${_formatRupiah(val)}',
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppPalette.primary,
               foregroundColor: Colors.white,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
             ),
-            child: const Text('Hapus'),
+            child: const Text('Simpan'),
           ),
         ],
       ),
@@ -83,379 +148,822 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
-
     return Scaffold(
-      backgroundColor: const Color(0xFFE3EED4),
+      backgroundColor: AppPalette.background,
       appBar: AppBar(
-        title: const Text(
-          'Rencana & Anggaran',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF375534),
-          ),
+        title: Text('Rundown & Itinerary', style: AppPalette.h2()),
+        backgroundColor: AppPalette.surface,
+        elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppPalette.border, height: 1),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
       ),
-      // Modul 6: ValueListenableBuilder terhubung langsung ke Box Hive
       body: ValueListenableBuilder<Box<ItineraryItem>>(
         valueListenable: Hive.box<ItineraryItem>('itineraries').listenable(),
         builder: (context, box, _) {
-          final items = box.values.toList();
+          final allItems = box.values.toList();
 
-          // Modul 3: Kalkulasi State Anggaran Real-time
+          // Hitung total anggaran
           double totalSpent = 0.0;
-          for (final item in items) {
+          for (final item in allItems) {
             totalSpent += item.budget;
           }
           final double remainingBudget = _maxBudget - totalSpent;
           final bool isOverbudget = remainingBudget < 0;
 
-          return Column(
+          // Pengecekan ada tidaknya bentrok jadwal di seluruh daftar
+          bool hasAnyConflict = false;
+          for (var i = 0; i < allItems.length; i++) {
+            for (var j = i + 1; j < allItems.length; j++) {
+              final a = allItems[i];
+              final b = allItems[j];
+              final isSameDay = a.scheduledDate.year == b.scheduledDate.year &&
+                  a.scheduledDate.month == b.scheduledDate.month &&
+                  a.scheduledDate.day == b.scheduledDate.day;
+              if (isSameDay) {
+                final diff = a.scheduledDate.difference(b.scheduledDate).inMinutes.abs();
+                if (diff < 90) {
+                  hasAnyConflict = true;
+                  break;
+                }
+              }
+            }
+            if (hasAnyConflict) break;
+          }
+
+          // Filter logic (Mendatang / Selesai / Semua)
+          final now = DateTime.now();
+          final filteredItems = <ItineraryItem>[];
+          for (final item in allItems) {
+            if (_selectedFilter == 1 && item.scheduledDate.isBefore(now)) continue;
+            if (_selectedFilter == 2 && item.scheduledDate.isAfter(now)) continue;
+            filteredItems.add(item);
+          }
+
+          // Urutkan item secara kronologis dari pagi ke malam
+          filteredItems.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+
+          // Kelompokkan itinerary berdasarkan Tanggal / Hari (Rundown Harian)
+          final Map<String, List<ItineraryItem>> groupedByDay = {};
+          final Map<String, DateTime> dateReferenceMap = {};
+
+          for (final item in filteredItems) {
+            final dateKey = DateFormat('yyyy-MM-dd').format(item.scheduledDate);
+            groupedByDay.putIfAbsent(dateKey, () => []).add(item);
+            dateReferenceMap[dateKey] = item.scheduledDate;
+          }
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
             children: [
-              // ─── Kartu Ringkasan Anggaran (Modul 3: Conditional Rendering & Styling)
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  // Dynamic Background: Merah jika Overbudget, Hijau Gelap jika Aman
-                  color: isOverbudget
-                      ? const Color(0xFFC53030)
-                      : const Color(0xFF375534),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color:
-                          (isOverbudget ? Colors.red : const Color(0xFF375534))
-                              .withOpacity(0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isOverbudget
-                              ? '⚠️ OVERBUDGET (MELEBIHI BATAS)'
-                              : 'KONTROL ANGGARAN WISATA',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${items.length} Rencana',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _formatRupiah(remainingBudget),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      'Sisa Anggaran Tersedia',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Divider(color: Colors.white24, height: 1),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Batas Maksimal:',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
-                                  fontSize: 11,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatRupiah(_maxBudget),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                'Total Terpakai:',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
-                                  fontSize: 11,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _formatRupiah(totalSpent),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              // ─── 1. Ringkasan Anggaran Wisata ─────────────────────────────
+              _buildBudgetCard(
+                totalSpent: totalSpent,
+                remainingBudget: remainingBudget,
+                isOverbudget: isOverbudget,
+                totalItems: allItems.length,
+                onEditBudget: () => _showSetBudgetDialog(context),
               ),
 
-              // ─── Header Daftar Itinerary
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 4,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Rencana Perjalanan',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F2A1D),
-                      ),
-                    ),
-                    Text(
-                      'Urut berdasarkan input',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 16),
 
-              // ─── List View Reaktif Hive (Modul 2 & 6)
-              Expanded(
-                child: items.isEmpty
-                    ? Center(
+              // ─── 2. Banner Peringatan Jika Ada Jadwal Bentrok ─────────────
+              if (hasAnyConflict)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBEB),
+                    borderRadius: AppPalette.radiusMd,
+                    border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+                    boxShadow: AppPalette.cardShadow,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF3C7),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.schedule_rounded,
+                          color: Color(0xFFD97706),
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.event_note,
-                              size: 64,
-                              color: Colors.grey.shade400,
-                            ),
-                            const SizedBox(height: 12),
                             Text(
-                              'Belum ada jadwal perjalanan di BajoLand.',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                              'Perhatian: Terdapat Jadwal Berdekatan',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF92400E),
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 3),
                             Text(
-                              'Tekan tombol + di bawah untuk menambah kegiatan.',
-                              style: TextStyle(
-                                color: Colors.grey.shade500,
+                              'Ada agenda yang berselisih waktu kurang dari 90 menit di hari yang sama. Cek kartu bertanda khusus di bawah.',
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
+                                color: const Color(0xFFB45309),
+                                height: 1.35,
                               ),
                             ),
                           ],
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        itemCount: items.length,
-                        itemBuilder: (context, index) {
-                          final item = items[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF375534)
-                                      .withOpacity(0.1),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ─── 3. Filter Kategori Rundown (Rata Kanan Kiri) ────────────
+              Row(
+                children: [
+                  Expanded(child: _buildFilterPill(label: 'Semua', index: 0)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildFilterPill(label: 'Mendatang', index: 1)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildFilterPill(label: 'Selesai', index: 2)),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // ─── 4. Konten Rundown Harian ─────────────────────────────────
+              if (allItems.isEmpty)
+                _buildEmptyState()
+              else if (filteredItems.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(28),
+                  decoration: BoxDecoration(
+                    color: AppPalette.surface,
+                    borderRadius: AppPalette.radiusLg,
+                    border: Border.all(color: AppPalette.border),
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Tidak ada jadwal perjalanan untuk kategori ini.',
+                      style: AppPalette.bodyMd(color: AppPalette.textSecondary),
+                    ),
+                  ),
+                )
+              else
+                ...groupedByDay.entries.map((entry) {
+                  final dateKey = entry.key;
+                  final dayItems = entry.value;
+                  final dayDate = dateReferenceMap[dateKey]!;
+
+                  // Total budget harian
+                  double dayTotalBudget = 0.0;
+                  for (final item in dayItems) {
+                    dayTotalBudget += item.budget;
+                  }
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Tanggal / Hari Rundown
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppPalette.surface,
+                            borderRadius: AppPalette.radiusMd,
+                            border: Border.all(color: AppPalette.border),
+                            boxShadow: AppPalette.cardShadow,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: AppPalette.primarySubtle,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
-                                  Icons.place,
-                                  color: Color(0xFF375534),
+                                  Icons.calendar_month_rounded,
+                                  size: 16,
+                                  color: AppPalette.primary,
                                 ),
                               ),
-                              title: Text(
-                                item.destination,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Color(0xFF0F2A1D),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  AppDateFormatter.formatDateWithDay(dayDate),
+                                  style: AppPalette.h3().copyWith(fontWeight: FontWeight.w700),
                                 ),
                               ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    item.activity,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 13,
-                                    ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppPalette.surfaceMuted,
+                                  borderRadius: AppPalette.radiusFull,
+                                  border: Border.all(color: AppPalette.border),
+                                ),
+                                child: Text(
+                                  '${dayItems.length} Agenda • ${_formatRupiah(dayTotalBudget)}',
+                                  style: AppPalette.labelXs(color: AppPalette.textPrimary).copyWith(
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.access_time,
-                                        size: 13,
-                                        color: Colors.grey,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        dateFormat.format(item.scheduledDate),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                ),
                               ),
-                              trailing: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    _formatRupiah(item.budget),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Color(0xFF375534),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Tombol Edit (Modul 4 & 6)
-                                      InkWell(
-                                        onTap: () {
-                                          Get.to(
-                                            () => AddItineraryScreen(
-                                              item: item,
-                                              index: index,
-                                            ),
-                                          );
-                                        },
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(4.0),
-                                          child: Icon(
-                                            Icons.edit,
-                                            size: 18,
-                                            color: Colors.blueGrey,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      // Tombol Hapus (Modul 6)
-                                      InkWell(
-                                        onTap: () => _confirmDelete(
-                                          context,
-                                          box,
-                                          index,
-                                          item.destination,
-                                        ),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(4.0),
-                                          child: Icon(
-                                            Icons.delete_outline,
-                                            size: 18,
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Timeline Items Rundown dalam Sehari
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: dayItems.length,
+                          itemBuilder: (context, idx) {
+                            final item = dayItems[idx];
+                            final isLast = idx == dayItems.length - 1;
+
+                            // Error Handling: Deteksi Bentrok Jadwal di Hari yang Sama (< 90 menit)
+                            bool isClashing = false;
+                            String? clashingWith;
+                            for (var other in dayItems) {
+                              if (other != item) {
+                                final diff = (other.scheduledDate.difference(item.scheduledDate)).inMinutes.abs();
+                                if (diff < 90) {
+                                  isClashing = true;
+                                  clashingWith = '${other.destination} (${DateFormat('HH:mm').format(other.scheduledDate)} WITA)';
+                                  break;
+                                }
+                              }
+                            }
+
+                            final originalIndex = allItems.indexOf(item);
+
+                            return _buildTimelineItem(
+                              context: context,
+                              box: box,
+                              item: item,
+                              index: originalIndex,
+                              isLast: isLast,
+                              isClashing: isClashing,
+                              clashingWith: clashingWith,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }),
             ],
           );
         },
       ),
-      // Floating Action Button (+) Tambah Jadwal Baru
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Get.to(() => const AddItineraryScreen());
-        },
-        backgroundColor: const Color(0xFF375534),
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Buat Rencana'),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Get.to(() => const AddItineraryScreen()),
+        backgroundColor: AppPalette.primary,
+        foregroundColor: AppPalette.onPrimary,
+        elevation: 3,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add_rounded, size: 28),
+      ),
+    );
+  }
+
+  // ─── Widget Timeline Node & Card Rundown ─────────────────────────────────
+  Widget _buildTimelineItem({
+    required BuildContext context,
+    required Box<ItineraryItem> box,
+    required ItineraryItem item,
+    required int index,
+    required bool isLast,
+    required bool isClashing,
+    String? clashingWith,
+  }) {
+    final timeStr = DateFormat('HH:mm').format(item.scheduledDate);
+    final isCompleted = item.scheduledDate.isBefore(DateTime.now());
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Kolom Kiri: Waktu & Garis Timeline
+          SizedBox(
+            width: 65,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isClashing
+                        ? const Color(0xFFFEF2F2)
+                        : (isCompleted ? const Color(0xFFF0FDF4) : AppPalette.primarySubtle),
+                    borderRadius: AppPalette.radiusSm,
+                    border: Border.all(
+                      color: isClashing
+                          ? AppPalette.error
+                          : (isCompleted
+                              ? const Color(0xFF86EFAC)
+                              : AppPalette.primary.withValues(alpha: 0.2)),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        timeStr,
+                        style: AppPalette.labelXs(
+                          color: isClashing
+                              ? AppPalette.error
+                              : (isCompleted ? const Color(0xFF16A34A) : AppPalette.primary),
+                        ).copyWith(fontWeight: FontWeight.w800, fontSize: 12),
+                      ),
+                      Text(
+                        'WITA',
+                        style: AppPalette.labelXs(
+                          color: isClashing
+                              ? AppPalette.error
+                              : (isCompleted ? const Color(0xFF16A34A) : AppPalette.primary),
+                        ).copyWith(fontSize: 9),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                // Titik Node Timeline (Merah jika bentrok, Hijau jika selesai, Biru jika mendatang)
+                Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: isClashing
+                        ? AppPalette.error
+                        : (isCompleted ? const Color(0xFF10B981) : AppPalette.primary),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isClashing
+                                ? AppPalette.error
+                                : (isCompleted
+                                    ? const Color(0xFF10B981)
+                                    : AppPalette.primary))
+                            .withValues(alpha: 0.35),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                // Garis Vertikal Timeline
+                Expanded(
+                  child: isLast
+                      ? const SizedBox.shrink()
+                      : Container(
+                          width: 2,
+                          color: isClashing
+                              ? const Color(0xFFFCA5A5)
+                              : (isCompleted ? const Color(0xFFCBD5E1) : AppPalette.border),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 8),
+
+          // Kolom Kanan: Kartu Agenda Rundown (Mendukung Geser / Swipe untuk Hapus)
+          Expanded(
+            child: Dismissible(
+              key: ValueKey(item.key ?? '${item.destination}_${item.scheduledDate.millisecondsSinceEpoch}_$index'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(right: 18),
+                alignment: Alignment.centerRight,
+                decoration: BoxDecoration(
+                  color: AppPalette.error,
+                  borderRadius: AppPalette.radiusLg,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: const [
+                    Text(
+                      'Hapus',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                  ],
+                ),
+              ),
+              confirmDismiss: (direction) async {
+                return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+                    backgroundColor: AppPalette.surface,
+                    title: Text('Hapus Agenda?', style: AppPalette.h2()),
+                    content: Text(
+                      'Apakah Anda yakin ingin menghapus agenda "${item.destination}" dari rundown?',
+                      style: AppPalette.bodyMd(),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: Text('Batal', style: AppPalette.caption(color: AppPalette.textSecondary)),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppPalette.error,
+                          foregroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+                          elevation: 0,
+                        ),
+                        child: const Text('Hapus'),
+                      ),
+                    ],
+                  ),
+                ) ?? false;
+              },
+              onDismissed: (_) async {
+                final title = item.destination;
+                await item.delete();
+                AppToast.info(
+                  'Agenda Terhapus',
+                  'Agenda "$title" berhasil dihapus dari rundown.',
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: isClashing
+                      ? const Color(0xFFFFF7F7)
+                      : (isCompleted ? const Color(0xFFF8FAFC) : AppPalette.surface),
+                  borderRadius: AppPalette.radiusLg,
+                  border: Border.all(
+                    color: isClashing
+                        ? const Color(0xFFFCA5A5)
+                        : (isCompleted ? const Color(0xFFE2E8F0) : AppPalette.border),
+                    width: isClashing ? 1.5 : 1,
+                  ),
+                  boxShadow: AppPalette.cardShadow,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Peringatan Bentrok di Kartu
+                    if (isClashing && clashingWith != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFFBEB),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFFDE68A), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.schedule_rounded, size: 13, color: Color(0xFFD97706)),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                'Jadwal berdekatan dengan: $clashingWith',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFFB45309),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Baris Judul & Aksi (Jika Selesai: Label Selesai di Pojok Kanan Atas, Jika Belum: Tombol Edit)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.destination,
+                            style: AppPalette.h3(
+                              color: isCompleted ? AppPalette.textSecondary : AppPalette.textPrimary,
+                            ).copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isCompleted)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFA7F3D0)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.check_circle_rounded, size: 11, color: Color(0xFF059669)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Selesai',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF059669),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: () => Get.to(
+                              () => AddItineraryScreen(item: item, index: index),
+                            ),
+                            child: Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                color: AppPalette.surfaceMuted,
+                                borderRadius: AppPalette.radiusFull,
+                              ),
+                              child: const Icon(
+                                Icons.edit_outlined,
+                                size: 15,
+                                color: AppPalette.textSecondary,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.directions_walk_rounded,
+                          size: 14,
+                          color: AppPalette.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            item.activity,
+                            style: AppPalette.bodyMd(color: AppPalette.textSecondary).copyWith(
+                              fontSize: 13,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+                    const Divider(height: 1, thickness: 0.8, color: AppPalette.border),
+                    const SizedBox(height: 8),
+
+                    // Estimasi Anggaran
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Estimasi Biaya:',
+                          style: AppPalette.caption(color: AppPalette.textSecondary),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isCompleted ? AppPalette.surfaceMuted : AppPalette.primarySubtle,
+                            borderRadius: AppPalette.radiusSm,
+                          ),
+                          child: Text(
+                            _formatRupiah(item.budget),
+                            style: AppPalette.labelXs(
+                              color: isCompleted ? AppPalette.textSecondary : AppPalette.primary,
+                            ).copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Kartu Anggaran Wisata ───────────────────────────────────────────────
+  Widget _buildBudgetCard({
+    required double totalSpent,
+    required double remainingBudget,
+    required bool isOverbudget,
+    required int totalItems,
+    required VoidCallback onEditBudget,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isOverbudget
+              ? [const Color(0xFFDC2626), const Color(0xFFEF4444)]
+              : [const Color(0xFF1A5FFF), const Color(0xFF124AD1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: AppPalette.radiusXl,
+        boxShadow: AppPalette.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isOverbudget ? '⚠️ MELEBIHI ANGGARAN' : 'KONTROL ANGGARAN WISATA',
+                style: AppPalette.labelXs(color: Colors.white.withValues(alpha: 0.9)).copyWith(
+                  letterSpacing: 0.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              GestureDetector(
+                onTap: onEditBudget,
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.edit_rounded, size: 16, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            _formatRupiah(remainingBudget),
+            style: AppPalette.h1(color: Colors.white).copyWith(
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Sisa Anggaran Tersedia',
+            style: AppPalette.caption(color: Colors.white.withValues(alpha: 0.85)),
+          ),
+          const SizedBox(height: 14),
+          Container(color: Colors.white.withValues(alpha: 0.2), height: 1),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Batas Maksimal:',
+                    style: AppPalette.labelXs(color: Colors.white.withValues(alpha: 0.75)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatRupiah(_maxBudget),
+                    style: AppPalette.caption(color: Colors.white).copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'Total Terpakai:',
+                    style: AppPalette.labelXs(color: Colors.white.withValues(alpha: 0.75)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _formatRupiah(totalSpent),
+                    style: AppPalette.caption(color: Colors.white).copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Filter Pills Row ────────────────────────────────────────────────────
+  Widget _buildFilterPill({required String label, required int index}) {
+    final isSelected = _selectedFilter == index;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedFilter = index);
+        if (Get.isRegistered<RootNavigationController>()) {
+          Get.find<RootNavigationController>().itineraryFilter.value = index;
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppPalette.primary : AppPalette.surface,
+          borderRadius: AppPalette.radiusFull,
+          border: Border.all(
+            color: isSelected ? AppPalette.primary : AppPalette.border,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: AppPalette.caption(
+            color: isSelected ? AppPalette.onPrimary : AppPalette.textSecondary,
+          ).copyWith(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Empty State ─────────────────────────────────────────────────────────
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: AppPalette.surface,
+        borderRadius: AppPalette.radiusLg,
+        border: Border.all(color: AppPalette.border, width: 1),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: AppPalette.primarySubtle,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.calendar_today_rounded,
+              size: 36,
+              color: AppPalette.primary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text('Belum Ada Rundown Perjalanan', style: AppPalette.h3()),
+          const SizedBox(height: 6),
+          Text(
+            'Susun rundown harian wisatamu di Labuan Bajo agar waktu dan anggaran terkontrol rapi.',
+            textAlign: TextAlign.center,
+            style: AppPalette.bodyMd(color: AppPalette.textSecondary),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () => Get.to(() => const AddItineraryScreen()),
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Buat Rundown Pertama'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppPalette.primary,
+              foregroundColor: AppPalette.onPrimary,
+              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              elevation: 0,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/itinerary_item.dart';
 import '../services/notification_service.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_toast.dart';
+import '../utils/date_formatter.dart';
 
-/// Form Tambah/Edit Jadwal & Anggaran (Modul 3, 6, 7)
+/// Form Tambah/Edit Jadwal & Anggaran (Design System BajoLand / Bookify)
 class AddItineraryScreen extends StatefulWidget {
   final ItineraryItem? item;
   final int? index;
@@ -43,6 +47,8 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
   @override
   void initState() {
     super.initState();
+    AppDateFormatter.ensureInitialized();
+    NotificationService.instance.requestPermissions();
     _destinationController = TextEditingController(
       text: widget.item?.destination ?? widget.initialDestination ?? '',
     );
@@ -53,8 +59,8 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
       text: widget.item != null
           ? widget.item!.budget.toStringAsFixed(0)
           : (widget.initialBudget != null
-                ? widget.initialBudget!.toStringAsFixed(0)
-                : ''),
+              ? widget.initialBudget!.toStringAsFixed(0)
+              : ''),
     );
 
     if (widget.item != null) {
@@ -81,8 +87,8 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF375534),
-              onPrimary: Colors.white,
+              primary: AppPalette.primary,
+              onPrimary: AppPalette.onPrimary,
             ),
           ),
           child: child!,
@@ -111,8 +117,8 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF375534),
-              onPrimary: Colors.white,
+              primary: AppPalette.primary,
+              onPrimary: AppPalette.onPrimary,
             ),
           ),
           child: child!,
@@ -134,77 +140,184 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     }
   }
 
+  ItineraryItem? _checkConflict(DateTime candidate) {
+    if (!Hive.isBoxOpen('itineraries')) return null;
+    final box = Hive.box<ItineraryItem>('itineraries');
+    for (var i = 0; i < box.length; i++) {
+      if (_isEditMode && widget.index == i) continue;
+      final existing = box.getAt(i);
+      if (existing == null) continue;
+
+      final isSameDay = existing.scheduledDate.year == candidate.year &&
+          existing.scheduledDate.month == candidate.month &&
+          existing.scheduledDate.day == candidate.day;
+
+      if (isSameDay) {
+        final diff = existing.scheduledDate.difference(candidate).inMinutes.abs();
+        if (diff < 90) {
+          return existing;
+        }
+      }
+    }
+    return null;
+  }
+
   Future<void> _saveItinerary() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final destination = _destinationController.text.trim();
-    final activity = _activityController.text.trim();
-    final budget = double.tryParse(_budgetController.text.trim()) ?? 0.0;
+    final String destination = _destinationController.text.trim();
+    final String activity = _activityController.text.trim();
+    final double budget = double.tryParse(_budgetController.text.trim()) ?? 0.0;
 
-    final finalScheduledDate = DateTime(
-      _selectedDate.year,
-      _selectedDate.month,
-      _selectedDate.day,
-      _selectedTime.hour,
-      _selectedTime.minute,
-    );
+    // Error Handling: Pengecekan Bentrok Jadwal Rundown
+    final clashingItem = _checkConflict(_selectedDate);
+    if (clashingItem != null) {
+      final bool? proceed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+          backgroundColor: AppPalette.surface,
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: AppPalette.warning, size: 26),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Jadwal Bentrok!', style: AppPalette.h2(color: AppPalette.warning)),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Waktu yang dipilih bertabrakan dengan agenda rundown lain di hari yang sama:',
+                style: AppPalette.bodyMd(),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: AppPalette.radiusMd,
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      clashingItem.destination,
+                      style: AppPalette.h3(color: const Color(0xFF92400E)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Pukul ${DateFormat('HH:mm').format(clashingItem.scheduledDate)} WITA • ${clashingItem.activity}',
+                      style: AppPalette.caption(color: const Color(0xFFB45309)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Selisih waktu kurang dari 90 menit berisiko membuat tur terburu-buru. Apakah Anda ingin tetap menyimpannya?',
+                style: AppPalette.caption(color: AppPalette.textSecondary),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                'Ubah Jam',
+                style: AppPalette.caption(color: AppPalette.primary).copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppPalette.warning,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+              ),
+              child: const Text('Tetap Simpan'),
+            ),
+          ],
+        ),
+      );
 
-    final box = Hive.box<ItineraryItem>('itineraries');
+      if (proceed != true) return;
+    }
+
+    final Box<ItineraryItem> box = Hive.box<ItineraryItem>('itineraries');
 
     if (_isEditMode) {
-      // Modul 6: Hive CRUD update (putAt)
-      final existingItem = widget.item!;
-      existingItem.destination = destination;
-      existingItem.activity = activity;
-      existingItem.budget = budget;
-      existingItem.scheduledDate = finalScheduledDate;
-      await box.putAt(widget.index!, existingItem);
+      final updatedItem = ItineraryItem(
+        destination: destination,
+        activity: activity,
+        budget: budget,
+        scheduledDate: _selectedDate,
+      );
+
+      await box.putAt(widget.index!, updatedItem);
+
+      if (_selectedDate.isAfter(DateTime.now())) {
+        await NotificationService.instance.scheduleNotification(
+          id: widget.index!,
+          title: 'Pengingat BajoLand: $destination',
+          body: 'Aktivitas: $activity (Anggaran: Rp ${budget.toStringAsFixed(0)})',
+          scheduledDate: _selectedDate,
+          payload: destination,
+        );
+      }
+
+      Get.back(result: true);
+      AppToast.success(
+        'Berhasil Diperbarui',
+        'Rencana perjalanan ke $destination berhasil disimpan.',
+      );
     } else {
-      // Modul 6: Hive CRUD create (add)
       final newItem = ItineraryItem(
         destination: destination,
         activity: activity,
         budget: budget,
-        scheduledDate: finalScheduledDate,
+        scheduledDate: _selectedDate,
       );
-      await box.add(newItem);
-    }
 
-    // Modul 7: Pemicu Notifikasi Langsung (Immediate) & Terjadwal (Scheduled)
-    final notificationId = _isEditMode
-        ? widget.index! + 100
-        : DateTime.now().millisecondsSinceEpoch % 100000;
+      final newIndex = await box.add(newItem);
 
-    // 1. Notifikasi Langsung Konfirmasi
-    await NotificationService.instance.showInstantNotification(
-      id: notificationId,
-      title: _isEditMode ? 'Jadwal Diperbarui!' : 'Jadwal Baru Disimpan!',
-      body: '$destination: $activity berhasil disimpan ke rencanamu.',
-    );
+      if (_selectedDate.isAfter(DateTime.now())) {
+        await NotificationService.instance.scheduleNotification(
+          id: newIndex,
+          title: 'Waktunya Menjelajah Bajo: $destination!',
+          body: 'Aktivitas: $activity (Anggaran: Rp ${budget.toStringAsFixed(0)})',
+          scheduledDate: _selectedDate,
+          payload: destination,
+        );
+      }
 
-    // 2. Notifikasi Terjadwal Keberangkatan
-    if (finalScheduledDate.isAfter(DateTime.now())) {
-      await NotificationService.instance.scheduleNotification(
-        id: notificationId + 1,
-        title: 'Pengingat Wisata: $destination',
-        body: 'Saatnya bersiap! Jadwal kegiatan "$activity" dimulai sekarang.',
-        scheduledDate: finalScheduledDate,
+      Get.back(result: true);
+      AppToast.success(
+        'Rencana Disimpan',
+        'Jadwal dan pengingat ke $destination berhasil dibuat!',
       );
     }
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _isEditMode
-                ? 'Jadwal berhasil diperbarui!'
-                : 'Jadwal berhasil ditambahkan & pengingat diaktifkan!',
-          ),
-          backgroundColor: const Color(0xFF375534),
-        ),
-      );
-      Get.back();
-    }
+    // Peringatan otomatis jika akumulasi anggaran melebihi batas anggaran
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final double maxBudget = prefs.getDouble('maxBudget') ?? 5000000.0;
+      final double totalSpent = box.values.fold(0.0, (sum, i) => sum + i.budget);
+
+      if (totalSpent > maxBudget) {
+        final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+        await NotificationService.instance.showInstantNotification(
+          id: 9991,
+          title: '⚠️ Peringatan: Batas Anggaran Terlampaui!',
+          body: 'Total alokasi liburan (${formatter.format(totalSpent)}) melebihi batas pagu anggaran (${formatter.format(maxBudget)}).',
+        );
+      }
+    } catch (_) {}
   }
 
   Widget _dateTimeCard({
@@ -213,45 +326,37 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     required String value,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: AppPalette.surface,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: AppPalette.forest),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppPalette.deepGreen,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppPalette.radiusMd,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppPalette.surfaceMuted,
+          borderRadius: AppPalette.radiusMd,
+          border: Border.all(color: AppPalette.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 16, color: AppPalette.primary),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppPalette.caption(color: AppPalette.textSecondary),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Ubah',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppPalette.forest,
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppPalette.bodyMd().copyWith(fontWeight: FontWeight.w700),
+            ),
+          ],
         ),
       ),
     );
@@ -259,106 +364,109 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('EEE, d MMM yyyy', 'id_ID');
-    final timeFormat = DateFormat('HH:mm');
-
     return Scaffold(
-      backgroundColor: AppPalette.ivory,
+      backgroundColor: AppPalette.background,
       appBar: AppBar(
         title: Text(
           _isEditMode ? 'Ubah Rencana' : 'Rencana Baru',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppPalette.h2(),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppPalette.forest,
-        elevation: 0.5,
+        backgroundColor: AppPalette.surface,
+        elevation: 0,
+        centerTitle: true,
+        leadingWidth: 54,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Center(
+            child: InkWell(
+              onTap: () => Get.back(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppPalette.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppPalette.border, width: 1),
+                  boxShadow: AppPalette.cardShadow,
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppPalette.textPrimary,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppPalette.border, height: 1),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ─── Kartu Informasi Destinasi & Aktivitas
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppPalette.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  borderRadius: AppPalette.radiusLg,
+                  border: Border.all(color: AppPalette.border),
+                  boxShadow: AppPalette.shadowCard,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(
-                          Icons.place_rounded,
-                          size: 20,
-                          color: AppPalette.forest,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Tujuan & kegiatan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppPalette.deepGreen,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppPalette.primarySubtle,
+                            borderRadius: AppPalette.radiusSm,
+                          ),
+                          child: const Icon(
+                            Icons.place_rounded,
+                            size: 18,
+                            color: AppPalette.primary,
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        Text('Tujuan & Aktivitas', style: AppPalette.h3()),
                       ],
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _destinationController,
-                      textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
-                        label: 'Destinasi wisata',
+                        label: 'Nama Destinasi',
                         icon: Icons.location_on_outlined,
+                        hint: 'Contoh: Pulau Padar, Pink Beach',
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
                           return 'Nama destinasi wajib diisi';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _activityController,
-                      textCapitalization: TextCapitalization.sentences,
                       decoration: _inputDecoration(
-                        label: 'Apa yang ingin dilakukan?',
-                        icon: Icons.hiking_rounded,
+                        label: 'Rencana Aktivitas',
+                        icon: Icons.directions_walk_rounded,
+                        hint: 'Contoh: Trekking sunrise, Snorkeling spot manta',
                       ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Detail kegiatan wajib diisi';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _budgetController,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        label: 'Perkiraan biaya',
-                        icon: Icons.payments_outlined,
-                        prefixText: 'Rp ',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Biaya wajib diisi';
-                        }
-                        if (double.tryParse(value.trim()) == null) {
-                          return 'Masukkan angka nominal yang valid';
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Aktivitas wajib diisi';
                         }
                         return null;
                       },
@@ -367,50 +475,103 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
+              // ─── Kartu Anggaran
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppPalette.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  borderRadius: AppPalette.radiusLg,
+                  border: Border.all(color: AppPalette.border),
+                  boxShadow: AppPalette.shadowCard,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(
-                          Icons.calendar_month_rounded,
-                          size: 20,
-                          color: AppPalette.forest,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Waktu perjalanan',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppPalette.deepGreen,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppPalette.primarySubtle,
+                            borderRadius: AppPalette.radiusSm,
+                          ),
+                          child: const Icon(
+                            Icons.account_balance_wallet_rounded,
+                            size: 18,
+                            color: AppPalette.primary,
                           ),
                         ),
+                        const SizedBox(width: 10),
+                        Text('Perkiraan Anggaran (IDR)', style: AppPalette.h3()),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _budgetController,
+                      keyboardType: TextInputType.number,
+                      decoration: _inputDecoration(
+                        label: 'Anggaran',
+                        icon: Icons.payments_outlined,
+                        prefixText: 'Rp ',
+                        hint: '0',
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) {
+                          return 'Anggaran wajib diisi';
+                        }
+                        final parsed = double.tryParse(val.trim());
+                        if (parsed == null || parsed < 0) {
+                          return 'Masukkan angka anggaran yang valid';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // ─── Kartu Tanggal & Waktu
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppPalette.surface,
+                  borderRadius: AppPalette.radiusLg,
+                  border: Border.all(color: AppPalette.border),
+                  boxShadow: AppPalette.shadowCard,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: const BoxDecoration(
+                            color: AppPalette.primarySubtle,
+                            borderRadius: AppPalette.radiusSm,
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today_rounded,
+                            size: 18,
+                            color: AppPalette.primary,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text('Jadwal Pelaksanaan', style: AppPalette.h3()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: _dateTimeCard(
-                            icon: Icons.calendar_today_rounded,
+                            icon: Icons.calendar_month_rounded,
                             label: 'Tanggal',
-                            value: dateFormat.format(_selectedDate),
+                            value: AppDateFormatter.formatDateWithDay(_selectedDate),
                             onTap: _pickDate,
                           ),
                         ),
@@ -418,69 +579,126 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
                         Expanded(
                           child: _dateTimeCard(
                             icon: Icons.schedule_rounded,
-                            label: 'Waktu setempat',
-                            value: '${timeFormat.format(_selectedDate)} WITA',
+                            label: 'Waktu (WITA)',
+                            value: '${AppDateFormatter.formatTime(_selectedDate)} WITA',
                             onTap: _pickTime,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: const BoxDecoration(
+                        color: AppPalette.primarySubtle,
+                        borderRadius: AppPalette.radiusMd,
                       ),
-                      decoration: BoxDecoration(
-                        color: AppPalette.ivory.withOpacity(0.65),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(
-                            Icons.notifications_active_outlined,
+                          const Icon(
+                            Icons.notifications_active_rounded,
                             size: 18,
-                            color: AppPalette.forest,
+                            color: AppPalette.primary,
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Kami akan mengingatkanmu sebelum berangkat.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppPalette.deepGreen,
+                              'Notifikasi lokal otomatis dijadwalkan pada waktu ini.',
+                              style: AppPalette.caption(color: AppPalette.primary).copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
+                    // Live Warning Jika Waktu Bentrok
+                    Builder(
+                      builder: (context) {
+                        final clashing = _checkConflict(_selectedDate);
+                        if (clashing == null) return const SizedBox.shrink();
+                        return Container(
+                          margin: const EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: AppPalette.radiusMd,
+                            border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFEF3C7),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.schedule_rounded,
+                                  color: Color(0xFFD97706),
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Perhatian: Jadwal Berdekatan',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF92400E),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Waktu ini berjarak kurang dari 90 menit dengan "${clashing.destination}" (${DateFormat('HH:mm').format(clashing.scheduledDate)} WITA).',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: const Color(0xFFB45309),
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // ─── Tombol Simpan (Primary Action 48px)
               SizedBox(
-                height: 54,
+                height: 48,
                 child: ElevatedButton.icon(
                   onPressed: _saveItinerary,
-                  icon: const Icon(Icons.check_rounded),
+                  icon: const Icon(Icons.check_rounded, size: 20),
                   label: Text(
-                    _isEditMode ? 'Simpan perubahan' : 'Simpan rencana',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
+                    _isEditMode ? 'Simpan Perubahan' : 'Simpan Rencana',
+                    style: AppPalette.bodyMd(color: AppPalette.onPrimary).copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppPalette.forest,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+                    backgroundColor: AppPalette.primary,
+                    foregroundColor: AppPalette.onPrimary,
+                    elevation: 0,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppPalette.radiusMd,
                     ),
-                    elevation: 2,
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -492,31 +710,38 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     required String label,
     required IconData icon,
     String? prefixText,
+    String? hint,
   }) {
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide.none,
-    );
-
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: AppPalette.forest),
+      labelStyle: AppPalette.bodyMd(color: AppPalette.textSecondary),
+      hintText: hint,
+      hintStyle: AppPalette.bodyMd(color: AppPalette.textSecondary.withValues(alpha: 0.5)),
+      prefixIcon: Icon(icon, color: AppPalette.primary, size: 20),
       prefixText: prefixText,
+      prefixStyle: AppPalette.bodyMd().copyWith(fontWeight: FontWeight.w600),
       filled: true,
-      fillColor: AppPalette.ivory.withOpacity(0.48),
-      border: border,
-      enabledBorder: border,
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppPalette.sage, width: 1.5),
+      fillColor: AppPalette.surfaceMuted,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: const OutlineInputBorder(
+        borderRadius: AppPalette.radiusMd,
+        borderSide: BorderSide(color: AppPalette.border),
       ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.redAccent),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: AppPalette.radiusMd,
+        borderSide: BorderSide(color: AppPalette.border),
       ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: AppPalette.radiusMd,
+        borderSide: BorderSide(color: AppPalette.primary, width: 1.5),
+      ),
+      errorBorder: const OutlineInputBorder(
+        borderRadius: AppPalette.radiusMd,
+        borderSide: BorderSide(color: AppPalette.error),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderRadius: AppPalette.radiusMd,
+        borderSide: BorderSide(color: AppPalette.error, width: 1.5),
       ),
     );
   }

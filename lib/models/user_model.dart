@@ -1,57 +1,53 @@
 /// Model User untuk autentikasi login (Modul 3: Model Class)
 class UserModel {
+  final String email;
   final String username;
   final String password;
   final String fullName;
 
   const UserModel({
-    required this.username,
+    String? email,
+    String? username,
     required this.password,
     required this.fullName,
-  });
+  })  : email = email ?? username ?? '',
+        username = username ?? email ?? '';
 
   Map<String, String> toJson() => {
+    'email': email,
     'username': username,
     'password': password,
     'fullName': fullName,
   };
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final identifier = (json['email'] ?? json['username'] ?? '') as String;
     return UserModel(
-      username: json['username'] as String,
-      password: json['password'] as String,
-      fullName: json['fullName'] as String,
+      email: identifier,
+      username: identifier,
+      password: (json['password'] ?? '') as String,
+      fullName: (json['fullName'] ?? '') as String,
     );
   }
 
-  /// Daftar akun terdaftar default untuk pengujian praktikum
+  /// Daftar akun bawaan untuk reserved username pengujian praktikum
   static const List<UserModel> registeredUsers = [
     UserModel(
       username: 'arya',
+      email: 'arya',
       password: '123',
       fullName: 'Arya Al Ashar',
     ),
     UserModel(
       username: 'wisatawan',
+      email: 'wisatawan',
       password: '123',
       fullName: 'Wisatawan Bajo',
-    ),
-    UserModel(
-      username: 'admin',
-      password: 'admin',
-      fullName: 'Administrator BajoLand',
     ),
   ];
 
   /// Validasi kredensial login
-  static UserModel? authenticate(String username, String password) {
-    for (final user in registeredUsers) {
-      if (user.username.trim().toLowerCase() == username.trim().toLowerCase() &&
-          user.password == password) {
-        return user;
-      }
-    }
+  static UserModel? authenticate(String identifier, String password) {
     return null;
   }
 }
-

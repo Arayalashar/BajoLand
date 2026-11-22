@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_toast.dart';
 
-/// Halaman pendaftaran akun baru yang disimpan secara lokal.
+/// Halaman Pendaftaran Akun Baru (Bahasa Indonesia & Bersih Tanpa Social Login)
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -16,18 +18,20 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
+  bool _agreeTerms = true;
   String? _errorMessage;
 
   @override
   void dispose() {
     _fullNameController.dispose();
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -36,15 +40,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (!_agreeTerms) {
+      AppToast.warning(
+        'Persetujuan',
+        'Harap setujui syarat dan ketentuan untuk melanjutkan.',
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final registered = await UserStorage().register(
       UserModel(
-        username: username,
+        email: email,
         password: _passwordController.text,
         fullName: _fullNameController.text.trim(),
       ),
@@ -54,62 +66,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!registered) {
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Nama pengguna sudah digunakan.';
+        _errorMessage = 'Email sudah terdaftar. Gunakan email lain.';
       });
       return;
     }
 
-    Get.back<String>(result: username);
+    Get.back<String>(result: email);
   }
 
-  InputDecoration _decoration({
-    required String label,
-    required IconData icon,
-    Widget? suffixIcon,
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required Widget suffixIcon,
   }) {
     return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: AppPalette.forest),
+      hintText: hintText,
+      hintStyle: GoogleFonts.inter(
+        fontSize: 14,
+        color: const Color(0xFF94A3B8),
+      ),
       suffixIcon: suffixIcon,
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 14,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(
+          color: Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppPalette.forest, width: 2),
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(
+          color: AppPalette.primary,
+          width: 1.5,
+        ),
       ),
-    );
-  }
-
-  Widget _passwordField({
-    required String label,
-    required IconData icon,
-    required TextEditingController controller,
-    required bool obscureText,
-    required VoidCallback toggleVisibility,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      obscureText: obscureText,
-      validator:
-          validator ??
-          (value) =>
-              value == null || value.isEmpty ? 'Password wajib diisi.' : null,
-      decoration: _decoration(
-        label: label,
-        icon: icon,
-        suffixIcon: IconButton(
-          onPressed: toggleVisibility,
-          icon: Icon(obscureText ? Icons.visibility_off : Icons.visibility),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(
+          color: AppPalette.error,
+          width: 1.2,
+        ),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(28),
+        borderSide: const BorderSide(
+          color: AppPalette.error,
+          width: 1.5,
         ),
       ),
     );
@@ -118,130 +125,337 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppPalette.ivory,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Daftar Akun'),
-        backgroundColor: AppPalette.ivory,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        leadingWidth: 54,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Center(
+            child: InkWell(
+              onTap: () => Get.back(),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppPalette.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppPalette.border, width: 1),
+                  boxShadow: AppPalette.cardShadow,
+                ),
+                child: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppPalette.textPrimary,
+                  size: 18,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
             child: Form(
               key: _formKey,
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    height: 150,
-                    fit: BoxFit.contain,
+                  // 1. Logo Saja di Tengah (Tanpa Teks BajoLand)
+                  Center(
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      height: 64,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Mulai petualanganmu',
+                  const SizedBox(height: 20),
+
+                  // 2. Judul "Buat Akun Baru" & Subjudul Bahasa Indonesia
+                  Text(
+                    'Buat Akun Baru',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppPalette.deepGreen,
+                    style: GoogleFonts.plusJakartaSans(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      color: AppPalette.textPrimary,
+                      letterSpacing: -0.4,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Buat akun untuk merencanakan perjalanan seru di Labuan Bajo.',
+                    'Lengkapi data Anda untuk mendaftar akun',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: AppPalette.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 24),
+
+                  // 3. Field Nama Lengkap
+                  Text(
+                    'Nama Lengkap',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppPalette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   TextFormField(
                     controller: _fullNameController,
-                    textCapitalization: TextCapitalization.words,
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Nama lengkap wajib diisi.'
-                        : null,
-                    decoration: _decoration(
-                      label: 'Nama lengkap',
-                      icon: Icons.badge_outlined,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _usernameController,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) {
-                      if (_errorMessage != null) {
-                        setState(() => _errorMessage = null);
-                      }
-                    },
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Username wajib diisi.'
-                        : null,
-                    decoration: _decoration(
-                      label: 'Username',
-                      icon: Icons.person_outline,
-                    ),
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  _passwordField(
-                    label: 'Password',
-                    icon: Icons.lock_outline,
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    toggleVisibility: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                    validator: (value) => value == null || value.length < 6
-                        ? 'Password minimal 6 karakter.'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _passwordField(
-                    label: 'Konfirmasi Password',
-                    icon: Icons.verified_user_outlined,
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmation,
-                    toggleVisibility: () => setState(
-                      () => _obscureConfirmation = !_obscureConfirmation,
-                    ),
-                    validator: (value) => value != _passwordController.text
-                        ? 'Konfirmasi password tidak sama.'
-                        : null,
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _handleRegister,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppPalette.forest,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                    style: GoogleFonts.inter(fontSize: 14, color: AppPalette.textPrimary),
+                    decoration: _inputDecoration(
+                      hintText: 'Masukkan nama lengkap',
+                      suffixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 20,
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Daftar',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Nama lengkap wajib diisi';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 4. Field Email
+                  Text(
+                    'Email',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppPalette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppPalette.textPrimary),
+                    decoration: _inputDecoration(
+                      hintText: 'contoh@gmail.com',
+                      suffixIcon: const Icon(
+                        Icons.mail_outline_rounded,
+                        size: 20,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Email wajib diisi';
+                      }
+                      if (!val.contains('@') || !val.contains('.')) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 5. Field Password
+                  Text(
+                    'Password',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppPalette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppPalette.textPrimary),
+                    decoration: _inputDecoration(
+                      hintText: 'Masukkan password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 20,
+                          color: const Color(0xFF94A3B8),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) {
+                        return 'Password wajib diisi';
+                      }
+                      if (val.length < 3) {
+                        return 'Password minimal 3 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 6. Field Konfirmasi Password
+                  Text(
+                    'Konfirmasi Password',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppPalette.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmation,
+                    style: GoogleFonts.inter(fontSize: 14, color: AppPalette.textPrimary),
+                    decoration: _inputDecoration(
+                      hintText: 'Masukkan ulang password',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmation
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 20,
+                          color: const Color(0xFF94A3B8),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmation = !_obscureConfirmation;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val != _passwordController.text) {
+                        return 'Konfirmasi password tidak cocok';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+
+                  // 7. Checkbox Syarat & Ketentuan
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: Checkbox(
+                          value: _agreeTerms,
+                          onChanged: (val) {
+                            setState(() {
+                              _agreeTerms = val ?? false;
+                            });
+                          },
+                          activeColor: AppPalette.primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
                           ),
+                          side: const BorderSide(
+                            color: Color(0xFFCBD5E1),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Saya menyetujui Syarat & Ketentuan Layanan',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppPalette.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Icon(Icons.error_outline_rounded, color: AppPalette.error, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: GoogleFonts.inter(fontSize: 12, color: AppPalette.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 22),
+
+                  // 8. Tombol Daftar (Pill Button Penuh)
+                  SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleRegister,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppPalette.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Daftar Akun',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 9. Sudah punya akun? Masuk
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Sudah punya akun? ',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppPalette.textSecondary,
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Get.back(),
+                        child: Text(
+                          'Masuk',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppPalette.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

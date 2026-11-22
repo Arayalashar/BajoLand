@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_toast.dart';
 import 'register_screen.dart';
 import 'root_screen.dart';
 
-/// Halaman Login Autentikasi Pengguna (Modul 2, 3, 4, 6)
+/// Halaman Login Autentikasi Pengguna (Bahasa Indonesia & Bersih Tanpa Social Login)
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -16,7 +18,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isLoginFailed = false;
@@ -31,12 +33,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  /// Memeriksa status login yang tersimpan di SharedPreferences (Modul 6)
+  /// Memeriksa status login yang tersimpan di SharedPreferences
   Future<void> _checkLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final bool isLoggedIn = prefs.getBool('loginData') ?? false;
@@ -49,8 +51,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Proses validasi dan eksekusi login
   Future<void> _handleLogin() async {
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _isLoginFailed = true;
+      });
+      AppToast.error('Login Gagal', 'Silakan masukkan email dan password.');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -59,120 +69,54 @@ class _LoginScreenState extends State<LoginScreen> {
 
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // Modul 6: Validasi akun demo atau akun yang tersimpan secara lokal.
-    final user = await UserStorage().authenticate(username, password);
+    final user = await UserStorage().authenticate(email, password);
 
     if (user != null) {
-      // Modul 6: Simpan sesi login ke SharedPreferences
+      final authenticatedUser = user;
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('loginData', true);
-      await prefs.setString('userName', user.fullName);
+      await prefs.setString('userName', authenticatedUser.fullName);
       if (prefs.getDouble('maxBudget') == null) {
         await prefs.setDouble('maxBudget', 5000000.0);
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Selamat datang di BajoLand, ${user.fullName}!'),
-            backgroundColor: const Color(0xFF375534),
-            behavior: SnackBarBehavior.floating,
-          ),
+        Get.offAll(() => RootScreen(userName: authenticatedUser.fullName));
+        AppToast.success(
+          'Selamat Datang',
+          'Halo ${authenticatedUser.fullName}, selamat merencanakan petualangan di Bajo!',
         );
-
-        Get.offAll(() => RootScreen(userName: user.fullName));
       }
     } else {
-      // Modul 3: Dynamic Styling (border merah) & Error Handling
       setState(() {
         _isLoginFailed = true;
         _isLoading = false;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Username atau Password salah! Silakan coba lagi.'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        AppToast.error(
+          'Login Gagal',
+          'Email atau password salah. Silakan periksa kembali atau daftar akun baru.',
         );
       }
     }
   }
 
   Future<void> _openRegister() async {
-    final username = await Get.to<String>(() => const RegisterScreen());
-    if (username != null && mounted) {
-      _usernameController.text = username;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Akun berhasil dibuat. Silakan masuk.')),
+    final email = await Get.to<String>(() => const RegisterScreen());
+    if (email != null && mounted) {
+      _emailController.text = email;
+      AppToast.success(
+        'Akun Terdaftar',
+        'Akun $email berhasil dibuat! Silakan masukkan password untuk masuk.',
       );
     }
-  }
-
-  /// Reusable Input Field Widget dengan Dynamic Border Styling (Modul 2 & Modul 3)
-  Widget _inputField({
-    required TextEditingController controller,
-    required String labelText,
-    required IconData prefixIcon,
-    bool isPassword = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword && _obscurePassword,
-      onChanged: (_) {
-        if (_isLoginFailed) {
-          setState(() {
-            _isLoginFailed = false;
-          });
-        }
-      },
-      decoration: InputDecoration(
-        labelText: labelText,
-        prefixIcon: Icon(prefixIcon, color: const Color(0xFF375534)),
-        suffixIcon: isPassword
-            ? IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey,
-                ),
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              )
-            : null,
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 16,
-        ),
-        // Dynamic Styling: Border berubah menjadi merah saat gagal login
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: _isLoginFailed ? Colors.red : Colors.grey.shade300,
-            width: _isLoginFailed ? 2.0 : 1.0,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: _isLoginFailed ? Colors.red : const Color(0xFF375534),
-            width: 2.0,
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppPalette.ivory,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -181,84 +125,249 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  height: 220,
-                  fit: BoxFit.contain,
+                // 1. Logo Saja di Tengah (Tanpa Teks BajoLand)
+                Center(
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    height: 64,
+                    fit: BoxFit.contain,
+                  ),
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  'Rencanakan perjalananmu di Labuan Bajo',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                ),
-                const SizedBox(height: 36),
+                const SizedBox(height: 24),
 
-                // Form Login
-                _inputField(
-                  controller: _usernameController,
-                  labelText: 'Username',
-                  prefixIcon: Icons.person_outline,
+                // 2. Judul "Selamat Datang" & Subjudul Bahasa Indonesia
+                Text(
+                  'Selamat Datang',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppPalette.textPrimary,
+                    letterSpacing: -0.4,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Masukkan email & password untuk masuk',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppPalette.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // 3. Field Email dengan Label di Atas
+                Text(
+                  'Email',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppPalette.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _emailController,
+                  onChanged: (_) {
+                    if (_isLoginFailed) {
+                      setState(() => _isLoginFailed = false);
+                    }
+                  },
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppPalette.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'contoh@gmail.com',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    suffixIcon: const Icon(
+                      Icons.mail_outline_rounded,
+                      size: 20,
+                      color: Color(0xFF94A3B8),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide(
+                        color: _isLoginFailed
+                            ? AppPalette.error
+                            : const Color(0xFFE2E8F0),
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide(
+                        color: _isLoginFailed
+                            ? AppPalette.error
+                            : AppPalette.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _inputField(
+
+                // 4. Field Password dengan Label di Atas
+                Text(
+                  'Password',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppPalette.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
                   controller: _passwordController,
-                  labelText: 'Password',
-                  prefixIcon: Icons.lock_outline,
-                  isPassword: true,
+                  obscureText: _obscurePassword,
+                  onChanged: (_) {
+                    if (_isLoginFailed) {
+                      setState(() => _isLoginFailed = false);
+                    }
+                  },
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: AppPalette.textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Masukkan password Anda',
+                    hintStyle: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 20,
+                        color: const Color(0xFF94A3B8),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 14,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide(
+                        color: _isLoginFailed
+                            ? AppPalette.error
+                            : const Color(0xFFE2E8F0),
+                        width: 1.2,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide(
+                        color: _isLoginFailed
+                            ? AppPalette.error
+                            : AppPalette.primary,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
                 ),
 
-                // Conditional Error Text
                 if (_isLoginFailed) ...[
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Username atau password belum sesuai.',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
+                        color: AppPalette.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Email atau password salah.',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppPalette.error,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
 
-                // Tombol Masuk
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF375534),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                // 5. Tombol Masuk (Pill Button Penuh)
+                SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppPalette.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
                     ),
-                    elevation: 2,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            'Masuk',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
                             ),
                           ),
-                        )
-                      : const Text(
-                          'Masuk',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  ),
                 ),
+                const SizedBox(height: 20),
 
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: _isLoading ? null : _openRegister,
-                  child: const Text('Belum punya akun? Daftar'),
+                // 6. Belum punya akun? Daftar
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Belum punya akun? ',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppPalette.textSecondary,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _isLoading ? null : _openRegister,
+                      child: Text(
+                        'Daftar akun',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppPalette.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

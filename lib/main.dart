@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/itinerary_item.dart';
@@ -11,13 +10,14 @@ import 'screens/login_screen.dart';
 import 'screens/root_screen.dart';
 import 'services/notification_service.dart';
 import 'theme/app_palette.dart';
+import 'utils/date_formatter.dart';
 
 void main() async {
   // 1. Memastikan binding Flutter siap sebelum inisialisasi async
   WidgetsFlutterBinding.ensureInitialized();
 
   // Inisialisasi locale formatting Indonesia untuk DateFormat
-  await initializeDateFormatting('id_ID', null);
+  await AppDateFormatter.ensureInitialized();
 
   // 2. Inisialisasi Database NoSQL Lokal Hive (Modul 6)
   await Hive.initFlutter();
@@ -32,12 +32,12 @@ void main() async {
   final bool isLoggedIn = prefs.getBool('loginData') ?? false;
   final String savedName = prefs.getString('userName') ?? 'Wisatawan Bajo';
 
-  // 5. Konfigurasi status bar dan navigation bar sistem
+  // 5. Konfigurasi status bar dan navigation bar sistem (sesuai design system)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: AppPalette.ivory,
+      systemNavigationBarColor: AppPalette.surface,
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
@@ -45,7 +45,7 @@ void main() async {
   runApp(BajoLandApp(isLoggedIn: isLoggedIn, userName: savedName));
 }
 
-/// Root Widget Aplikasi BajoLand (Modul 2: MaterialApp, Theme, ColorScheme)
+/// Root Widget Aplikasi BajoLand (Menggunakan Design System BajoLand / Bookify)
 class BajoLandApp extends StatelessWidget {
   final bool isLoggedIn;
   final String userName;
@@ -58,34 +58,44 @@ class BajoLandApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = AppPalette.forest;
-
     return GetMaterialApp(
       title: 'BajoLand',
       debugShowCheckedModeBanner: false,
-      defaultTransition: Transition.native,
+      defaultTransition: Transition.fadeIn,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          primary: primaryColor,
+        scaffoldBackgroundColor: AppPalette.background,
+        colorScheme: const ColorScheme(
+          brightness: Brightness.light,
+          primary: AppPalette.primary,
+          onPrimary: AppPalette.onPrimary,
+          secondary: AppPalette.primaryHover,
+          onSecondary: AppPalette.onPrimary,
+          error: AppPalette.error,
+          onError: Colors.white,
+          surface: AppPalette.surface,
+          onSurface: AppPalette.textPrimary,
         ),
-        scaffoldBackgroundColor: AppPalette.ivory,
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        textTheme: GoogleFonts.interTextTheme(
           Theme.of(context).textTheme,
+        ).apply(
+          bodyColor: AppPalette.textPrimary,
+          displayColor: AppPalette.textPrimary,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: primaryColor,
-          elevation: 0.5,
-          centerTitle: false,
+          backgroundColor: AppPalette.surface,
+          foregroundColor: AppPalette.textPrimary,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
         ),
         snackBarTheme: const SnackBarThemeData(
-          backgroundColor: AppPalette.deepGreen,
+          backgroundColor: AppPalette.textPrimary,
+          contentTextStyle: TextStyle(color: Colors.white, fontSize: 13),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
         ),
       ),
-      // Alur Awal: Jika sudah login langsung ke RootScreen, jika belum ke LoginScreen
       home: isLoggedIn ? RootScreen(userName: userName) : const LoginScreen(),
     );
   }

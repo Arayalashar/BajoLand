@@ -1,14 +1,19 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/itinerary_item.dart';
+import '../services/notification_service.dart';
 import '../theme/app_palette.dart';
+import '../utils/app_toast.dart';
 import 'login_screen.dart';
+import 'root_screen.dart';
 
-/// Halaman Profil, Pengaturan Anggaran & Logout (Modul 4 & Modul 6)
+/// Halaman Profil Sederhana (Simple Profile Screen)
+/// Desain bersih & minimalis sesuai Design System BajoLand
+/// Mendukung penggantian foto profil dari Galeri perangkat
 class ProfileScreen extends StatefulWidget {
   final String userName;
 
@@ -19,81 +24,229 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  double _maxBudget = 5000000.0;
-  final TextEditingController _budgetDialogController = TextEditingController();
+  late String _userName;
+  String _userEmail = '';
+  String _avatarUrl = '';
+  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
-    _loadMaxBudget();
+    _userName = widget.userName;
+    _loadProfileData();
   }
 
-  @override
-  void dispose() {
-    _budgetDialogController.dispose();
-    super.dispose();
-  }
+  /// Memuat data profil & status perizinan notifikasi dari SharedPreferences
+  Future<void> _loadProfileData() async {
+    final rootCtrl = Get.isRegistered<RootNavigationController>()
+        ? Get.find<RootNavigationController>()
+        : null;
 
-  /// Memuat batas anggaran dari SharedPreferences (Modul 6)
-  Future<void> _loadMaxBudget() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _maxBudget = prefs.getDouble('maxBudget') ?? 5000000.0;
-    });
-  }
+    final savedName = prefs.getString('userName');
+    final savedEmail = prefs.getString('userEmail');
+    final savedAvatar = prefs.getString('userAvatar');
+    final savedNotif = prefs.getBool('notificationsEnabled');
 
-  /// Memperbarui batas anggaran di SharedPreferences (Modul 6)
-  Future<void> _updateMaxBudget(double newBudget) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('maxBudget', newBudget);
-    setState(() {
-      _maxBudget = newBudget;
-    });
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Batas total anggaran berhasil diperbarui!'),
-          backgroundColor: Color(0xFF375534),
-        ),
-      );
+      setState(() {
+        if (savedName != null && savedName.isNotEmpty) {
+          _userName = savedName;
+        } else if (rootCtrl != null && rootCtrl.userName.value.isNotEmpty) {
+          _userName = rootCtrl.userName.value;
+        }
+        _userEmail = (savedEmail != null && savedEmail.isNotEmpty)
+            ? savedEmail
+            : (_userName.toLowerCase().contains('arya')
+                ? 'arya.alashar@bajoland.id'
+                : '${_userName.toLowerCase().replaceAll(' ', '.')}@bajoland.id');
+        _avatarUrl = (savedAvatar != null && savedAvatar.isNotEmpty)
+            ? savedAvatar
+            : ((rootCtrl != null && rootCtrl.userAvatar.value.isNotEmpty)
+                ? rootCtrl.userAvatar.value
+                : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+        _notificationsEnabled = savedNotif ?? true;
+      });
     }
   }
 
-  /// Dialog untuk mengubah nominal batas anggaran
-  void _showEditBudgetDialog() {
-    _budgetDialogController.text = _maxBudget.toStringAsFixed(0);
+  /// Mengambil foto profil langsung dari Galeri perangkat
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (picked != null) {
+        final path = picked.path;
+        final rootCtrl = Get.isRegistered<RootNavigationController>()
+            ? Get.find<RootNavigationController>()
+            : null;
+
+        if (rootCtrl != null) {
+          await rootCtrl.updateProfile(avatar: path);
+        } else {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('userAvatar', path);
+        }
+
+        if (mounted) {
+          setState(() {
+            _avatarUrl = path;
+          });
+          AppToast.success('Foto Profil Diperbarui', 'Foto profil berhasil diambil dari galeri.');
+        }
+      }
+    } catch (_) {
+      AppToast.error('Gagal Mengambil Foto', 'Terjadi kesalahan saat membuka galeri.');
+    }
+  }
+
+  /// Dialog untuk mengubah nama dan email pengguna (Edit Profil)
+  void _showEditProfileDialog() {
+    final nameController = TextEditingController(text: _userName);
+    final emailController = TextEditingController(text: _userEmail);
+    final avatarController = TextEditingController(text: _avatarUrl);
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Ubah Batas Anggaran'),
-        content: TextField(
-          controller: _budgetDialogController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Total Anggaran Maksimal (Rp)',
-            prefixText: 'Rp ',
-            border: OutlineInputBorder(),
+        backgroundColor: AppPalette.surface,
+        shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+        title: Text('Edit Profil', style: AppPalette.h3()),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Nama Lengkap', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan nama lengkap',
+                  filled: true,
+                  fillColor: AppPalette.surfaceMuted,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: AppPalette.radiusMd,
+                    borderSide: const BorderSide(color: AppPalette.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text('Email', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan alamat email',
+                  filled: true,
+                  fillColor: AppPalette.surfaceMuted,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: AppPalette.radiusMd,
+                    borderSide: const BorderSide(color: AppPalette.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text('Foto Profil (Galeri / URL)', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
+              const SizedBox(height: 6),
+              TextField(
+                controller: avatarController,
+                decoration: InputDecoration(
+                  hintText: 'Path galeri atau URL foto...',
+                  filled: true,
+                  fillColor: AppPalette.surfaceMuted,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: AppPalette.radiusMd,
+                    borderSide: const BorderSide(color: AppPalette.border),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final picker = ImagePicker();
+                    final XFile? picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 800,
+                      maxHeight: 800,
+                      imageQuality: 85,
+                    );
+                    if (picked != null) {
+                      avatarController.text = picked.path;
+                    }
+                  },
+                  icon: const Icon(Icons.photo_library_rounded, size: 18),
+                  label: const Text('Pilih Foto dari Galeri'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppPalette.primary,
+                    side: const BorderSide(color: AppPalette.primary),
+                    shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
+            child: Text('Batal', style: AppPalette.bodyMd(color: AppPalette.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () {
-              final newBudget = double.tryParse(
-                _budgetDialogController.text.trim(),
-              );
-              if (newBudget != null && newBudget > 0) {
+            onPressed: () async {
+              final newName = nameController.text.trim();
+              final newEmail = emailController.text.trim();
+              final newAvatar = avatarController.text.trim();
+
+              if (newName.isNotEmpty) {
                 Navigator.pop(ctx);
-                _updateMaxBudget(newBudget);
+                final rootCtrl = Get.isRegistered<RootNavigationController>()
+                    ? Get.find<RootNavigationController>()
+                    : null;
+                if (rootCtrl != null) {
+                  rootCtrl.updateProfile(
+                    name: newName,
+                    email: newEmail.isNotEmpty ? newEmail : null,
+                    avatar: newAvatar.isNotEmpty ? newAvatar : null,
+                  );
+                } else {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('userName', newName);
+                  if (newEmail.isNotEmpty) {
+                    await prefs.setString('userEmail', newEmail);
+                  }
+                  if (newAvatar.isNotEmpty) {
+                    await prefs.setString('userAvatar', newAvatar);
+                  }
+                }
+
+                if (mounted) {
+                  setState(() {
+                    _userName = newName;
+                    if (newEmail.isNotEmpty) _userEmail = newEmail;
+                    if (newAvatar.isNotEmpty) _avatarUrl = newAvatar;
+                  });
+                  AppToast.success('Profil Diperbarui', 'Data profil Anda berhasil disimpan.');
+                }
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF375534),
+              backgroundColor: AppPalette.primary,
               foregroundColor: Colors.white,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
             ),
             child: const Text('Simpan'),
           ),
@@ -102,381 +255,405 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  /// Logout: Hapus status login dan navigasi pushAndRemoveUntil (Modul 4 & 6)
-  Future<void> _handleLogout() async {
+  /// Dialog Perizinan Notifikasi
+  Future<void> _handleNotificationPermission() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('loginData', false);
+    final newStatus = !_notificationsEnabled;
+
+    await prefs.setBool('notificationsEnabled', newStatus);
+
+    if (newStatus) {
+      await NotificationService.instance.requestPermissions();
+      await NotificationService.instance.showInstantNotification(
+        id: 9991,
+        title: 'Notifikasi Aktif',
+        body: 'Pengingat rencana dan info penting BajoLand akan selalu tampil di perangkat Anda.',
+      );
+      AppToast.success('Izin Notifikasi Aktif', 'Pengingat perjalanan diaktifkan.');
+    } else {
+      AppToast.warning('Notifikasi Dinonaktifkan', 'Anda tidak akan menerima notifikasi pengingat.');
+    }
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Anda telah berhasil keluar dari akun.'),
-          backgroundColor: Colors.blueGrey,
-        ),
-      );
-
-      Get.offAll(() => const LoginScreen());
+      setState(() {
+        _notificationsEnabled = newStatus;
+      });
     }
   }
 
-  String _formatRupiah(double amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
+  /// Dialog Tentang BajoLand
+  void _showAboutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppPalette.surface,
+        shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppPalette.primarySubtle,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.travel_explore_rounded, color: AppPalette.primary, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Text('Tentang BajoLand', style: AppPalette.h3()),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'BajoLand v1.0.0',
+              style: AppPalette.bodyMd().copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Aplikasi travel planner dan panduan wisata pintar terlengkap untuk menjelajahi keindahan Labuan Bajo dan Kepulauan Komodo.',
+              style: AppPalette.bodyMd(color: AppPalette.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppPalette.surfaceMuted,
+                borderRadius: AppPalette.radiusMd,
+                border: Border.all(color: AppPalette.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Fitur Utama:', style: AppPalette.labelXs().copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('• Eksplorasi Destinasi Populer', style: AppPalette.caption(color: AppPalette.textSecondary)),
+                  Text('• Itinerary & Budget Manager dengan Notifikasi', style: AppPalette.caption(color: AppPalette.textSecondary)),
+                  Text('• Radar Bajo (LBS) & Navigasi Rute Bahari', style: AppPalette.caption(color: AppPalette.textSecondary)),
+                  Text('• Manajemen Wishlist & Riwayat Agenda', style: AppPalette.caption(color: AppPalette.textSecondary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppPalette.primary,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+            ),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
     );
-    return formatter.format(amount);
   }
 
-  Widget _profileStat({
-    required IconData icon,
-    required String value,
-    required String label,
-    bool compactValue = false,
-  }) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 88),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppPalette.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: AppPalette.deepGreen.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+  /// Konfirmasi & Eksekusi Logout
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppPalette.surface,
+        shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusLg),
+        title: Text('Keluar dari Akun?', style: AppPalette.h3()),
+        content: Text(
+          'Anda perlu masuk kembali untuk mengakses seluruh data liburan Anda.',
+          style: AppPalette.bodyMd(color: AppPalette.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Batal', style: AppPalette.bodyMd(color: AppPalette.textSecondary)),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppPalette.ivory.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(12),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('loginData', false);
+              Get.offAll(() => const LoginScreen());
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppPalette.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
             ),
-            child: Icon(icon, size: 20, color: AppPalette.forest),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: compactValue ? 14 : 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppPalette.deepGreen,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade700),
-                ),
-              ],
-            ),
+            child: const Text('Keluar'),
           ),
         ],
       ),
     );
+  }
+
+  /// Helper untuk merender foto profil baik dari file lokal galeri maupun URL web
+  Widget _buildAvatarImage(String avatar, String name) {
+    if (avatar.isEmpty) {
+      return Center(
+        child: Text(
+          name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
+          style: const TextStyle(
+            fontSize: 38,
+            fontWeight: FontWeight.bold,
+            color: AppPalette.primary,
+          ),
+        ),
+      );
+    }
+
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return Image.network(
+        avatar,
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(
+            name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
+            style: const TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.bold,
+              color: AppPalette.primary,
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Image.file(
+        File(avatar),
+        width: 100,
+        height: 100,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Center(
+          child: Text(
+            name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U',
+            style: const TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.bold,
+              color: AppPalette.primary,
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE3EED4),
+      backgroundColor: AppPalette.background,
       appBar: AppBar(
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppPalette.forest,
-          ),
+        title: Text('Profil', style: AppPalette.h2()),
+        backgroundColor: AppPalette.surface,
+        elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppPalette.border, height: 1),
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: AppPalette.forest,
-        elevation: 0.5,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppPalette.spacingLg,
+          vertical: AppPalette.spacingXl,
+        ),
         child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [AppPalette.forest, AppPalette.deepGreen],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppPalette.deepGreen.withOpacity(0.18),
-                    blurRadius: 16,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: Row(
+            // ─── 1. FOTO DITENGAH, NAMA, & EMAIL ───────────────────────────
+            Center(
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.white.withOpacity(0.16),
-                    child: Text(
-                      widget.userName.trim().isEmpty
-                          ? '?'
-                          : widget.userName.trim()[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 25,
-                        fontWeight: FontWeight.bold,
+                  Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickImageFromGallery,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppPalette.primarySubtle,
+                            border: Border.all(color: AppPalette.primary, width: 2.5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppPalette.primary.withValues(alpha: 0.20),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipOval(
+                            child: _buildAvatarImage(_avatarUrl, _userName),
+                          ),
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _pickImageFromGallery,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: AppPalette.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2.5),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x33000000),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, size: 15, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Halo,',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withOpacity(0.76),
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          widget.userName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'Siap menjelajah Labuan Bajo?',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.82),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 14),
+                  Text(
+                    _userName,
+                    style: AppPalette.h2().copyWith(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.waves_rounded,
-                    color: Colors.white.withOpacity(0.34),
-                    size: 34,
+                  const SizedBox(height: 4),
+                  Text(
+                    _userEmail,
+                    style: AppPalette.bodyMd(color: AppPalette.textSecondary).copyWith(
+                      fontSize: 13,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 32),
 
-            // ─── Statistik Perjalanan & Hive ValueListenable
-            ValueListenableBuilder<Box<ItineraryItem>>(
-              valueListenable: Hive.box<ItineraryItem>('itineraries')
-                  .listenable(),
-              builder: (context, box, _) {
-                final totalItems = box.length;
-                double totalSpent = 0.0;
-                for (final item in box.values) {
-                  totalSpent += item.budget;
-                }
-
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _profileStat(
-                        icon: Icons.event_note_rounded,
-                        value: '$totalItems',
-                        label: 'Rencana tersimpan',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _profileStat(
-                        icon: Icons.account_balance_wallet_rounded,
-                        value: _formatRupiah(totalSpent),
-                        label: 'Dana terencana',
-                        compactValue: true,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: 10, left: 2),
-                child: Text(
-                  'Pengaturan',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppPalette.deepGreen,
-                  ),
-                ),
-              ),
-            ),
+            // ─── 2. MENU VERTIKAL SEDERHANA ───────────────────────────────
             Container(
               decoration: BoxDecoration(
                 color: AppPalette.surface,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppPalette.deepGreen.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                borderRadius: AppPalette.radiusLg,
+                border: Border.all(color: AppPalette.border),
+                boxShadow: AppPalette.cardShadow,
               ),
               child: Column(
                 children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0x1F6B9071),
-                      child: Icon(
-                        Icons.savings_outlined,
-                        color: AppPalette.forest,
-                      ),
-                    ),
-                    title: const Text(
-                      'Batas anggaran',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppPalette.deepGreen,
-                      ),
-                    ),
-                    subtitle: Text(_formatRupiah(_maxBudget)),
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppPalette.sage,
-                    ),
-                    onTap: _showEditBudgetDialog,
+                  // Menu 1: Edit Profil
+                  _buildMenuItem(
+                    icon: Icons.edit_note_rounded,
+                    title: 'Edit Profil',
+                    subtitle: 'Ubah nama, email, atau foto profil',
+                    onTap: _showEditProfileDialog,
                   ),
-                  Divider(
-                    height: 1,
-                    indent: 72,
-                    endIndent: 16,
-                    color: AppPalette.mist.withOpacity(0.55),
+                  const Divider(height: 1, color: AppPalette.border, indent: 56),
+
+                  // Menu 2: Perizinan Notifikasi
+                  _buildMenuItem(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'Perizinan Notifikasi',
+                    subtitle: _notificationsEnabled ? 'Notifikasi Aktif' : 'Notifikasi Dinonaktifkan',
+                    trailing: Switch.adaptive(
+                      value: _notificationsEnabled,
+                      activeTrackColor: AppPalette.primary,
+                      onChanged: (_) => _handleNotificationPermission(),
+                    ),
+                    onTap: _handleNotificationPermission,
                   ),
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 4,
-                    ),
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0x1F6B9071),
-                      child: Icon(
-                        Icons.info_outline_rounded,
-                        color: AppPalette.forest,
-                      ),
-                    ),
-                    title: const Text(
-                      'Tentang aplikasi',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppPalette.deepGreen,
-                      ),
-                    ),
-                    subtitle: const Text('Versi dan informasi BajoLand'),
-                    trailing: const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppPalette.sage,
-                    ),
-                    onTap: () {
-                      showAboutDialog(
-                        context: context,
-                        applicationName: 'BajoLand',
-                        applicationVersion: '1.0.0',
-                        applicationLegalese:
-                            'Teman merencanakan perjalanan di Labuan Bajo.',
-                      );
-                    },
+                  const Divider(height: 1, color: AppPalette.border, indent: 56),
+
+                  // Menu 3: Tentang BajoLand
+                  _buildMenuItem(
+                    icon: Icons.info_outline_rounded,
+                    title: 'Tentang BajoLand',
+                    subtitle: 'Versi aplikasi & informasi pembuat',
+                    onTap: _showAboutDialog,
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 22),
+            const SizedBox(height: 36),
 
-            // ─── Tombol Logout (Modul 4 & Modul 6: pushAndRemoveUntil)
+            // ─── 3. TOMBOL KELUAR ──────────────────────────────────────────
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Keluar dari akun?'),
-                      content: const Text(
-                        'Kamu perlu masuk lagi untuk melihat rencana perjalananmu.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Batal'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            _handleLogout();
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFB5473C),
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Keluar'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text('Keluar dari akun'),
+                onPressed: _confirmLogout,
+                icon: const Icon(Icons.logout_rounded, size: 20, color: AppPalette.error),
+                label: Text(
+                  'Keluar dari Akun',
+                  style: AppPalette.bodyMd(color: AppPalette.error).copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFB5473C),
-                  backgroundColor: const Color(0xFFFFF4F2),
-                  side: const BorderSide(color: Color(0xFFE8BDB7)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                  backgroundColor: AppPalette.surface,
+                  side: const BorderSide(color: Color(0xFFFCA5A5), width: 1.2),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: AppPalette.radiusMd,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  /// Widget Item Menu Vertikal
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Widget? trailing,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: AppPalette.primarySubtle,
+          borderRadius: AppPalette.radiusMd,
+        ),
+        child: Icon(icon, color: AppPalette.primary, size: 20),
+      ),
+      title: Text(
+        title,
+        style: AppPalette.bodyMd().copyWith(
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: AppPalette.caption(color: AppPalette.textSecondary).copyWith(
+          fontSize: 12,
+        ),
+      ),
+      trailing: trailing ??
+          const Icon(
+            Icons.chevron_right_rounded,
+            size: 20,
+            color: AppPalette.textSecondary,
+          ),
     );
   }
 }
