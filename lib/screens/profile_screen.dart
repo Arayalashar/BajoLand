@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/notification_service.dart';
+import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import 'login_screen.dart';
@@ -44,9 +45,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     final savedName = prefs.getString('userName');
-    final savedEmail = prefs.getString('userEmail');
+    String? savedEmail = prefs.getString('userEmail');
     final savedAvatar = prefs.getString('userAvatar');
     final savedNotif = prefs.getBool('notificationsEnabled');
+
+    // Jika email belum tersimpan, cari data akun registrasi asli dari UserStorage
+    if (savedEmail == null || savedEmail.isEmpty) {
+      final lookupName = savedName ?? (rootCtrl != null && rootCtrl.userName.value.isNotEmpty ? rootCtrl.userName.value : _userName);
+      final matchedUser = await UserStorage().findByFullName(lookupName) ?? await UserStorage().getLastRegisteredUser();
+      if (matchedUser != null && matchedUser.email.isNotEmpty) {
+        savedEmail = matchedUser.email;
+        await prefs.setString('userEmail', savedEmail);
+        if (rootCtrl != null) {
+          rootCtrl.userEmail.value = savedEmail;
+        }
+      }
+    }
 
     if (mounted) {
       setState(() {
@@ -55,16 +69,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         } else if (rootCtrl != null && rootCtrl.userName.value.isNotEmpty) {
           _userName = rootCtrl.userName.value;
         }
-        _userEmail = (savedEmail != null && savedEmail.isNotEmpty)
-            ? savedEmail
-            : (_userName.toLowerCase().contains('arya')
-                ? 'arya.alashar@bajoland.id'
-                : '${_userName.toLowerCase().replaceAll(' ', '.')}@bajoland.id');
+        if (savedEmail != null && savedEmail.isNotEmpty) {
+          _userEmail = savedEmail;
+        } else if (rootCtrl != null && rootCtrl.userEmail.value.isNotEmpty) {
+          _userEmail = rootCtrl.userEmail.value;
+        }
         _avatarUrl = (savedAvatar != null && savedAvatar.isNotEmpty)
             ? savedAvatar
             : ((rootCtrl != null && rootCtrl.userAvatar.value.isNotEmpty)
                 ? rootCtrl.userAvatar.value
-                : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80');
+                : '');
         _notificationsEnabled = savedNotif ?? true;
       });
     }
@@ -106,11 +120,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// Dialog untuk mengubah nama dan email pengguna (Edit Profil)
+  /// Dialog untuk mengubah nama, email, dan foto profil (Hanya dari Galeri)
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _userName);
     final emailController = TextEditingController(text: _userEmail);
-    final avatarController = TextEditingController(text: _avatarUrl);
+    String selectedAvatarPath = _avatarUrl;
 
     showDialog(
       context: context,
@@ -155,46 +169,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              Text('Foto Profil (Galeri / URL)', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
-              const SizedBox(height: 6),
-              TextField(
-                controller: avatarController,
-                decoration: InputDecoration(
-                  hintText: 'Path galeri atau URL foto...',
-                  filled: true,
-                  fillColor: AppPalette.surfaceMuted,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: AppPalette.radiusMd,
-                    borderSide: const BorderSide(color: AppPalette.border),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final picker = ImagePicker();
-                    final XFile? picked = await picker.pickImage(
-                      source: ImageSource.gallery,
-                      maxWidth: 800,
-                      maxHeight: 800,
-                      imageQuality: 85,
-                    );
-                    if (picked != null) {
-                      avatarController.text = picked.path;
-                    }
-                  },
-                  icon: const Icon(Icons.photo_library_rounded, size: 18),
-                  label: const Text('Pilih Foto dari Galeri'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppPalette.primary,
-                    side: const BorderSide(color: AppPalette.primary),
-                    shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
-                  ),
-                ),
+              const SizedBox(height: 16),
+              Text('Foto Profil (Galeri)', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
+              const SizedBox(height: 8),
+              StatefulBuilder(
+                builder: (dialogCtx, setDialogState) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppPalette.surfaceMuted,
+                      borderRadius: AppPalette.radiusMd,
+                      border: Border.all(color: AppPalette.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppPalette.primarySubtle,
+                            border: Border.all(color: AppPalette.primary, width: 2),
+                          ),
+                          child: ClipOval(
+                            child: _buildAvatarImage(selectedAvatarPath, _userName),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final picker = ImagePicker();
+                              final XFile? picked = await picker.pickImage(
+                                source: ImageSource.gallery,
+                                maxWidth: 800,
+                                maxHeight: 800,
+                                imageQuality: 85,
+                              );
+                              if (picked != null) {
+                                setDialogState(() {
+                                  selectedAvatarPath = picked.path;
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.photo_library_rounded, size: 18),
+                            label: const Text('Pilih dari Galeri'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppPalette.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -208,7 +240,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () async {
               final newName = nameController.text.trim();
               final newEmail = emailController.text.trim();
-              final newAvatar = avatarController.text.trim();
 
               if (newName.isNotEmpty) {
                 Navigator.pop(ctx);
@@ -219,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   rootCtrl.updateProfile(
                     name: newName,
                     email: newEmail.isNotEmpty ? newEmail : null,
-                    avatar: newAvatar.isNotEmpty ? newAvatar : null,
+                    avatar: selectedAvatarPath.isNotEmpty ? selectedAvatarPath : null,
                   );
                 } else {
                   final prefs = await SharedPreferences.getInstance();
@@ -227,8 +258,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (newEmail.isNotEmpty) {
                     await prefs.setString('userEmail', newEmail);
                   }
-                  if (newAvatar.isNotEmpty) {
-                    await prefs.setString('userAvatar', newAvatar);
+                  if (selectedAvatarPath.isNotEmpty) {
+                    await prefs.setString('userAvatar', selectedAvatarPath);
                   }
                 }
 
@@ -236,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   setState(() {
                     _userName = newName;
                     if (newEmail.isNotEmpty) _userEmail = newEmail;
-                    if (newAvatar.isNotEmpty) _avatarUrl = newAvatar;
+                    if (selectedAvatarPath.isNotEmpty) _avatarUrl = selectedAvatarPath;
                   });
                   AppToast.success('Profil Diperbarui', 'Data profil Anda berhasil disimpan.');
                 }

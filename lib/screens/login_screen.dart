@@ -76,6 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('loginData', true);
       await prefs.setString('userName', authenticatedUser.fullName);
+      await prefs.setString('userEmail', authenticatedUser.email);
       if (prefs.getDouble('maxBudget') == null) {
         await prefs.setDouble('maxBudget', 5000000.0);
       }

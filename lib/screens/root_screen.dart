@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
 import 'all_destinations_screen.dart';
 import 'explore_screen.dart';
@@ -39,7 +40,7 @@ class RootNavigationController extends GetxController {
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final savedName = prefs.getString('userName');
-    final savedEmail = prefs.getString('userEmail');
+    String? savedEmail = prefs.getString('userEmail');
     final savedAvatar = prefs.getString('userAvatar');
 
     if (savedName != null && savedName.isNotEmpty) {
@@ -47,11 +48,15 @@ class RootNavigationController extends GetxController {
     }
     if (savedEmail != null && savedEmail.isNotEmpty) {
       userEmail.value = savedEmail;
+    } else if (savedName != null && savedName.isNotEmpty) {
+      final user = await UserStorage().findByFullName(savedName) ?? await UserStorage().getLastRegisteredUser();
+      if (user != null && user.email.isNotEmpty) {
+        userEmail.value = user.email;
+        await prefs.setString('userEmail', user.email);
+      }
     }
     if (savedAvatar != null && savedAvatar.isNotEmpty) {
       userAvatar.value = savedAvatar;
-    } else {
-      userAvatar.value = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
     }
   }
 

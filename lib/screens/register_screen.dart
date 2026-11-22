@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
 import '../services/user_storage.dart';
@@ -70,6 +71,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
       return;
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userEmail', email);
+    await prefs.setString('userName', _fullNameController.text.trim());
 
     Get.back<String>(result: email);
   }

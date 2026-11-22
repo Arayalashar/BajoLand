@@ -71,4 +71,24 @@ class UserStorage {
     }
     return null;
   }
+
+  /// Mencari data akun pengguna berdasarkan nama lengkap terdaftar
+  Future<UserModel?> findByFullName(String fullName) async {
+    final clean = fullName.trim().toLowerCase();
+    for (final user in await _loadUsers()) {
+      if (user.fullName.trim().toLowerCase() == clean) {
+        return user;
+      }
+    }
+    return null;
+  }
+
+  /// Mengambil data pengguna yang terakhir kali terdaftar
+  Future<UserModel?> getLastRegisteredUser() async {
+    final users = await _loadUsers();
+    if (users.isNotEmpty) {
+      return users.last;
+    }
+    return null;
+  }
 }
