@@ -49,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final savedAvatar = prefs.getString('userAvatar');
     final savedNotif = prefs.getBool('notificationsEnabled');
 
-    // Jika email belum tersimpan, cari data akun registrasi asli dari UserStorage
+    // Pastikan email sinkron dengan akun yang didaftarkan di UserStorage
     if (savedEmail == null || savedEmail.isEmpty) {
       final lookupName = savedName ?? (rootCtrl != null && rootCtrl.userName.value.isNotEmpty ? rootCtrl.userName.value : _userName);
       final matchedUser = await UserStorage().findByFullName(lookupName) ?? await UserStorage().getLastRegisteredUser();
@@ -73,6 +73,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _userEmail = savedEmail;
         } else if (rootCtrl != null && rootCtrl.userEmail.value.isNotEmpty) {
           _userEmail = rootCtrl.userEmail.value;
+        } else {
+          _userEmail = '${_userName.toLowerCase().replaceAll(' ', '.')}@gmail.com';
         }
         _avatarUrl = (savedAvatar != null && savedAvatar.isNotEmpty)
             ? savedAvatar
@@ -120,11 +122,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  /// Dialog untuk mengubah nama, email, dan foto profil (Hanya dari Galeri)
+  /// Dialog untuk mengubah nama dan email pengguna (Edit Profil)
   void _showEditProfileDialog() {
     final nameController = TextEditingController(text: _userName);
     final emailController = TextEditingController(text: _userEmail);
-    String selectedAvatarPath = _avatarUrl;
 
     showDialog(
       context: context,
@@ -169,65 +170,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text('Foto Profil (Galeri)', style: AppPalette.labelXs(color: AppPalette.textSecondary)),
-              const SizedBox(height: 8),
-              StatefulBuilder(
-                builder: (dialogCtx, setDialogState) {
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppPalette.surfaceMuted,
-                      borderRadius: AppPalette.radiusMd,
-                      border: Border.all(color: AppPalette.border),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppPalette.primarySubtle,
-                            border: Border.all(color: AppPalette.primary, width: 2),
-                          ),
-                          child: ClipOval(
-                            child: _buildAvatarImage(selectedAvatarPath, _userName),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              final picker = ImagePicker();
-                              final XFile? picked = await picker.pickImage(
-                                source: ImageSource.gallery,
-                                maxWidth: 800,
-                                maxHeight: 800,
-                                imageQuality: 85,
-                              );
-                              if (picked != null) {
-                                setDialogState(() {
-                                  selectedAvatarPath = picked.path;
-                                });
-                              }
-                            },
-                            icon: const Icon(Icons.photo_library_rounded, size: 18),
-                            label: const Text('Pilih dari Galeri'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppPalette.primary,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
             ],
           ),
         ),
@@ -250,7 +192,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   rootCtrl.updateProfile(
                     name: newName,
                     email: newEmail.isNotEmpty ? newEmail : null,
-                    avatar: selectedAvatarPath.isNotEmpty ? selectedAvatarPath : null,
                   );
                 } else {
                   final prefs = await SharedPreferences.getInstance();
@@ -258,16 +199,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   if (newEmail.isNotEmpty) {
                     await prefs.setString('userEmail', newEmail);
                   }
-                  if (selectedAvatarPath.isNotEmpty) {
-                    await prefs.setString('userAvatar', selectedAvatarPath);
-                  }
                 }
 
                 if (mounted) {
                   setState(() {
                     _userName = newName;
                     if (newEmail.isNotEmpty) _userEmail = newEmail;
-                    if (selectedAvatarPath.isNotEmpty) _avatarUrl = selectedAvatarPath;
                   });
                   AppToast.success('Profil Diperbarui', 'Data profil Anda berhasil disimpan.');
                 }
@@ -586,7 +523,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuItem(
                     icon: Icons.edit_note_rounded,
                     title: 'Edit Profil',
-                    subtitle: 'Ubah nama, email, atau foto profil',
+                    subtitle: 'Ubah nama lengkap atau alamat email',
                     onTap: _showEditProfileDialog,
                   ),
                   const Divider(height: 1, color: AppPalette.border, indent: 56),
