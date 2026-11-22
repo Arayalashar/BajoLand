@@ -170,6 +170,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await _pickImageFromGallery();
+                  },
+                  icon: const Icon(Icons.photo_library_rounded, size: 18),
+                  label: const Text('Ganti Foto dari Galeri'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppPalette.primary,
+                    side: const BorderSide(color: AppPalette.primary),
+                    shape: const RoundedRectangleBorder(borderRadius: AppPalette.radiusMd),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -502,6 +519,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       fontSize: 13,
                     ),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  // Tombol Cepat Ganti Foto Profil dari Galeri
+                  InkWell(
+                    onTap: _pickImageFromGallery,
+                    borderRadius: AppPalette.radiusFull,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppPalette.primarySubtle,
+                        borderRadius: AppPalette.radiusFull,
+                        border: Border.all(
+                          color: AppPalette.primary.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.photo_library_rounded, size: 14, color: AppPalette.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Ganti Foto dari Galeri',
+                            style: AppPalette.caption(color: AppPalette.primary).copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ],
               ),

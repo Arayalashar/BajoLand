@@ -378,7 +378,7 @@ class _LbsScreenState extends State<LbsScreen> {
           // ─── 3. TOMBOL KANAN MELAYANG (Recenter & Focus) ───────────────────
           Positioned(
             right: 16,
-            bottom: 405,
+            bottom: 420,
             child: Column(
               children: [
                 GestureDetector(
@@ -457,6 +457,8 @@ class _LbsScreenState extends State<LbsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox(height: 6),
+
                     // Judul Radar Destinasi Bajo & Penjelasan 1-2 Kalimat
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -470,7 +472,7 @@ class _LbsScreenState extends State<LbsScreen> {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(height: 5),
+                          const SizedBox(height: 6),
                           Text(
                             'Jelajahi dan ukur jarak destinasi wisata terbaik Labuan Bajo langsung dari lokasi Anda.',
                             style: AppPalette.bodyMd(color: AppPalette.textSecondary).copyWith(
