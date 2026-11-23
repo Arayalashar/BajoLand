@@ -55,8 +55,6 @@ class _LbsScreenState extends State<LbsScreen> {
     _sortedDestinations = List<LocationData>.from(bajoDestinations);
     if (_sortedDestinations.isNotEmpty) {
       _selectedLocation = _sortedDestinations.first;
-      // Langsung munculkan rute bahari realistis dari Pelabuhan Marina ke destinasi awal
-      _currentRoute = _generateRealisticRoute(_marinaPort, _selectedLocation!);
     }
   }
 
@@ -64,13 +62,6 @@ class _LbsScreenState extends State<LbsScreen> {
   void dispose() {
     _carouselController.dispose();
     super.dispose();
-  }
-
-  /// Memperbarui rute navigasi realistis dari titik awal ke destinasi terpilih
-  void _updateRoute(LatLng start, LocationData destination) {
-    setState(() {
-      _currentRoute = _generateRealisticRoute(start, destination);
-    });
   }
 
   /// Meminta izin GPS dan mengambil posisi koordinat pengguna saat ini
@@ -133,27 +124,36 @@ class _LbsScreenState extends State<LbsScreen> {
 
       // Urutkan dari yang paling dekat ke yang paling jauh
       final sorted = List<LocationData>.from(bajoDestinations)
-        ..sort((a, b) => (a.distanceInMeters ?? 0).compareTo(b.distanceInMeters ?? 0));
+        ..sort(
+          (a, b) =>
+              (a.distanceInMeters ?? 0).compareTo(b.distanceInMeters ?? 0),
+        );
 
       final startPoint = userLatLng;
-      final nearest = sorted.first;
+      final selectedDestination = _selectedLocation ?? sorted.first;
+      final selectedIndex = sorted.indexWhere(
+        (destination) => destination.id == selectedDestination.id,
+      );
 
       setState(() {
         _currentPosition = position;
         _sortedDestinations = sorted;
-        _selectedLocation = nearest;
+        _selectedLocation = selectedDestination;
         _hasCalculatedDistance = true;
         _isLoadingLocation = false;
-        _currentRoute = _generateRealisticRoute(startPoint, nearest);
+        _currentRoute = _generateRealisticRoute(
+          startPoint,
+          selectedDestination,
+        );
       });
 
       // Arahkan kamera peta langsung ke lokasi GPS riil pengguna saat ini
       _mapController.move(userLatLng, 12.0);
 
-      // Gulir carousel ke awal (destinasi terdekat)
-      if (_carouselController.hasClients) {
+      // Gulir carousel ke destinasi yang jaraknya baru dihitung
+      if (_carouselController.hasClients && selectedIndex >= 0) {
         _carouselController.animateTo(
-          0,
+          selectedIndex * 302.0,
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOut,
         );
@@ -161,7 +161,7 @@ class _LbsScreenState extends State<LbsScreen> {
 
       AppToast.success(
         'Jarak Berhasil Dihitung',
-        'Destinasi terdekat: ${nearest.name} (${nearest.formattedDistance}).',
+        'Jarak ke ${selectedDestination.name}: ${selectedDestination.formattedDistance}.',
       );
     } catch (_) {
       setState(() => _isLoadingLocation = false);
@@ -174,10 +174,7 @@ class _LbsScreenState extends State<LbsScreen> {
 
   /// Membuat garis rute lurus langsung sebagai ilustrasi jarak ke destinasi terpilih
   List<LatLng> _generateRealisticRoute(LatLng start, LocationData dest) {
-    return [
-      start,
-      LatLng(dest.latitude, dest.longitude),
-    ];
+    return [start, LatLng(dest.latitude, dest.longitude)];
   }
 
   /// Memfilter destinasi sesuai chip filter yang sinkron dengan halaman Explore
@@ -187,14 +184,19 @@ class _LbsScreenState extends State<LbsScreen> {
       return _hasCalculatedDistance ? _sortedDestinations : bajoDestinations;
     }
 
-    final baseList = _hasCalculatedDistance ? _sortedDestinations : bajoDestinations;
+    final baseList = _hasCalculatedDistance
+        ? _sortedDestinations
+        : bajoDestinations;
     final search = selectedCat.toLowerCase();
 
     final filtered = baseList.where((d) {
       final cat = d.category.toLowerCase();
       final name = d.name.toLowerCase();
       if (search == 'gua') {
-        return cat.contains('gua') || cat.contains('goa') || name.contains('gua') || name.contains('goa');
+        return cat.contains('gua') ||
+            cat.contains('goa') ||
+            name.contains('gua') ||
+            name.contains('goa');
       }
       return cat.contains(search) || name.contains(search);
     }).toList();
@@ -206,18 +208,16 @@ class _LbsScreenState extends State<LbsScreen> {
   void _onSelectDestination(LocationData dest, {int? index}) {
     setState(() {
       _selectedLocation = dest;
+      if (_hasCalculatedDistance && _currentPosition != null) {
+        _currentRoute = _generateRealisticRoute(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          dest,
+        );
+      }
     });
 
-    final startPoint = (_hasCalculatedDistance && _currentPosition != null)
-        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-        : _marinaPort;
-    _updateRoute(startPoint, dest);
-
     // Pindahkan fokus kamera ke destinasi
-    _mapController.move(
-      LatLng(dest.latitude, dest.longitude),
-      11.5,
-    );
+    _mapController.move(LatLng(dest.latitude, dest.longitude), 11.5);
 
     // Gulir carousel ke kartu yang dipilih
     if (index != null && _carouselController.hasClients) {
@@ -256,7 +256,7 @@ class _LbsScreenState extends State<LbsScreen> {
                 userAgentPackageName: 'com.example.bajoland',
               ),
 
-              // Rute Alur Bahari (Polyline) menuju Destinasi Terpilih (SELALU MUNCUL)
+              // Garis ke destinasi terpilih muncul setelah jarak GPS dihitung.
               if (_currentRoute.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -273,7 +273,10 @@ class _LbsScreenState extends State<LbsScreen> {
                   // Marker Titik Awal Pelayaran (GPS Pengguna atau Pelabuhan Marina jika belum hitung)
                   Marker(
                     point: (_hasCalculatedDistance && _currentPosition != null)
-                        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+                        ? LatLng(
+                            _currentPosition!.latitude,
+                            _currentPosition!.longitude,
+                          )
                         : _marinaPort,
                     width: 52,
                     height: 52,
@@ -289,15 +292,21 @@ class _LbsScreenState extends State<LbsScreen> {
                         filteredList[i].latitude,
                         filteredList[i].longitude,
                       ),
-                      width: _selectedLocation?.id == filteredList[i].id ? 150 : 42,
-                      height: _selectedLocation?.id == filteredList[i].id ? 72 : 42,
+                      width: _selectedLocation?.id == filteredList[i].id
+                          ? 150
+                          : 42,
+                      height: _selectedLocation?.id == filteredList[i].id
+                          ? 72
+                          : 42,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => _onSelectDestination(filteredList[i], index: i),
+                        onTap: () =>
+                            _onSelectDestination(filteredList[i], index: i),
                         child: _buildDestinationMarker(
                           dest: filteredList[i],
                           rank: _hasCalculatedDistance ? i + 1 : null,
-                          isSelected: _selectedLocation?.id == filteredList[i].id,
+                          isSelected:
+                              _selectedLocation?.id == filteredList[i].id,
                         ),
                       ),
                     ),
@@ -314,7 +323,10 @@ class _LbsScreenState extends State<LbsScreen> {
             right: 0,
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -355,17 +367,25 @@ class _LbsScreenState extends State<LbsScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: _isTopoMap ? AppPalette.primarySubtle : AppPalette.surface,
+                          color: _isTopoMap
+                              ? AppPalette.primarySubtle
+                              : AppPalette.surface,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: _isTopoMap ? AppPalette.primary : AppPalette.border,
+                            color: _isTopoMap
+                                ? AppPalette.primary
+                                : AppPalette.border,
                           ),
                           boxShadow: AppPalette.cardShadow,
                         ),
                         child: Icon(
-                          _isTopoMap ? Icons.terrain_rounded : Icons.layers_rounded,
+                          _isTopoMap
+                              ? Icons.terrain_rounded
+                              : Icons.layers_rounded,
                           size: 19,
-                          color: _isTopoMap ? AppPalette.primary : AppPalette.textPrimary,
+                          color: _isTopoMap
+                              ? AppPalette.primary
+                              : AppPalette.textPrimary,
                         ),
                       ),
                     ),
@@ -385,7 +405,10 @@ class _LbsScreenState extends State<LbsScreen> {
                   onTap: () {
                     if (_currentPosition != null) {
                       _mapController.move(
-                        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                        LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
                         12.0,
                       );
                     } else {
@@ -410,7 +433,8 @@ class _LbsScreenState extends State<LbsScreen> {
                 ),
                 const SizedBox(height: 8),
                 GestureDetector(
-                  onTap: () => _mapController.move(_initialCenter, _initialZoom),
+                  onTap: () =>
+                      _mapController.move(_initialCenter, _initialZoom),
                   child: Container(
                     width: 40,
                     height: 40,
@@ -475,10 +499,9 @@ class _LbsScreenState extends State<LbsScreen> {
                           const SizedBox(height: 6),
                           Text(
                             'Jelajahi dan ukur jarak destinasi wisata terbaik Labuan Bajo langsung dari lokasi Anda.',
-                            style: AppPalette.bodyMd(color: AppPalette.textSecondary).copyWith(
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
+                            style: AppPalette.bodyMd(
+                              color: AppPalette.textSecondary,
+                            ).copyWith(fontSize: 12, height: 1.4),
                           ),
                         ],
                       ),
@@ -504,23 +527,35 @@ class _LbsScreenState extends State<LbsScreen> {
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppPalette.primary : AppPalette.surfaceMuted,
+                                color: isSelected
+                                    ? AppPalette.primary
+                                    : AppPalette.surfaceMuted,
                                 borderRadius: AppPalette.radiusFull,
                                 border: Border.all(
-                                  color: isSelected ? AppPalette.primary : AppPalette.border,
+                                  color: isSelected
+                                      ? AppPalette.primary
+                                      : AppPalette.border,
                                 ),
                               ),
                               child: Center(
                                 child: Text(
                                   _filters[index],
-                                  style: AppPalette.labelXs(
-                                    color: isSelected ? Colors.white : AppPalette.textSecondary,
-                                  ).copyWith(
-                                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                    fontSize: 11,
-                                  ),
+                                  style:
+                                      AppPalette.labelXs(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : AppPalette.textSecondary,
+                                      ).copyWith(
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        fontSize: 11,
+                                      ),
                                 ),
                               ),
                             ),
@@ -561,7 +596,9 @@ class _LbsScreenState extends State<LbsScreen> {
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton.icon(
-                          onPressed: _isLoadingLocation ? null : _getCurrentLocation,
+                          onPressed: _isLoadingLocation
+                              ? null
+                              : _getCurrentLocation,
                           icon: _isLoadingLocation
                               ? const SizedBox(
                                   width: 18,
@@ -576,11 +613,10 @@ class _LbsScreenState extends State<LbsScreen> {
                             _isLoadingLocation
                                 ? 'Mengambil Titik GPS...'
                                 : (_hasCalculatedDistance
-                                    ? 'Perbarui Jarak Lokasi Saya'
-                                    : 'Cek Jarak Lokasi Saya'),
-                            style: AppPalette.bodyMd(color: Colors.white).copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                                      ? 'Perbarui Jarak Lokasi Saya'
+                                      : 'Cek Jarak Lokasi Saya'),
+                            style: AppPalette.bodyMd(color: Colors.white)
+                                .copyWith(fontWeight: FontWeight.w700),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppPalette.primary,
@@ -687,10 +723,7 @@ class _LbsScreenState extends State<LbsScreen> {
             decoration: BoxDecoration(
               color: AppPalette.accentGold,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white,
-                width: 2.5,
-              ),
+              border: Border.all(color: Colors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
                   color: AppPalette.accentGold.withValues(alpha: 0.50),
@@ -722,10 +755,7 @@ class _LbsScreenState extends State<LbsScreen> {
       decoration: BoxDecoration(
         color: AppPalette.primary,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: 2.0,
-        ),
+        border: Border.all(color: Colors.white, width: 2.0),
         boxShadow: [
           BoxShadow(
             color: AppPalette.primary.withValues(alpha: 0.35),
@@ -738,11 +768,8 @@ class _LbsScreenState extends State<LbsScreen> {
         child: Image.network(
           dest.imageUrl,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => const Icon(
-            Icons.place_rounded,
-            color: Colors.white,
-            size: 18,
-          ),
+          errorBuilder: (_, __, ___) =>
+              const Icon(Icons.place_rounded, color: Colors.white, size: 18),
         ),
       ),
     );
@@ -784,7 +811,9 @@ class _LbsScreenState extends State<LbsScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
                   child: Image.network(
                     dest.imageUrl,
                     width: double.infinity,
@@ -794,7 +823,10 @@ class _LbsScreenState extends State<LbsScreen> {
                       height: 104,
                       color: AppPalette.surfaceMuted,
                       child: const Center(
-                        child: Icon(Icons.broken_image_rounded, color: Colors.grey),
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -804,7 +836,10 @@ class _LbsScreenState extends State<LbsScreen> {
                     top: 8,
                     left: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: const BoxDecoration(
                         color: AppPalette.primary,
                         borderRadius: AppPalette.radiusSm,
@@ -850,13 +885,17 @@ class _LbsScreenState extends State<LbsScreen> {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 13,
+                                  color: Color(0xFFF59E0B),
+                                ),
                                 const SizedBox(width: 1),
                                 Text(
                                   dest.rating.toString(),
-                                  style: AppPalette.labelXs(color: AppPalette.textPrimary).copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  style: AppPalette.labelXs(
+                                    color: AppPalette.textPrimary,
+                                  ).copyWith(fontWeight: FontWeight.w700),
                                 ),
                               ],
                             ),
@@ -874,9 +913,9 @@ class _LbsScreenState extends State<LbsScreen> {
                             Expanded(
                               child: Text(
                                 dest.location,
-                                style: AppPalette.caption(color: AppPalette.textSecondary).copyWith(
-                                  fontSize: 10,
-                                ),
+                                style: AppPalette.caption(
+                                  color: AppPalette.textSecondary,
+                                ).copyWith(fontSize: 10),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -891,7 +930,10 @@ class _LbsScreenState extends State<LbsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: _hasCalculatedDistance
                                 ? AppPalette.primarySubtle
@@ -923,10 +965,15 @@ class _LbsScreenState extends State<LbsScreen> {
                           ),
                         ),
                         InkWell(
-                          onTap: () => Get.to(() => DetailGearScreen(productId: dest.id)),
+                          onTap: () => Get.to(
+                            () => DetailGearScreen(productId: dest.id),
+                          ),
                           borderRadius: AppPalette.radiusSm,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: const BoxDecoration(
                               color: AppPalette.primary,
                               borderRadius: AppPalette.radiusSm,

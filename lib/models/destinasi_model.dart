@@ -8,6 +8,8 @@ class DestinasiModel {
   final String location;
   final String description;
   final String imageUrl;
+  final List<String> galleryImages;
+  final String photoAttribution;
 
   const DestinasiModel({
     required this.id,
@@ -18,23 +20,31 @@ class DestinasiModel {
     required this.location,
     required this.description,
     required this.imageUrl,
+    this.galleryImages = const [],
+    this.photoAttribution = '',
   });
 
   factory DestinasiModel.fromJson(Map<String, dynamic> json) {
     return DestinasiModel(
-      id: json['id'] is int ? json['id'] as int : int.tryParse('${json['id']}') ?? 0,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
       name: json['name']?.toString() ?? 'Destinasi Labuan Bajo',
       category: json['category']?.toString() ?? 'Wisata Alam',
       ticketPrice: json['ticketPrice'] != null
           ? (json['ticketPrice'] as num).toDouble()
           : 0.0,
-      rating: json['rating'] != null
-          ? (json['rating'] as num).toDouble()
-          : 4.8,
+      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 4.8,
       location: json['location']?.toString() ?? 'Labuan Bajo, NTT',
-      description: json['description']?.toString() ?? 'Deskripsi keindahan destinasi wisata.',
-      imageUrl: json['imageUrl']?.toString() ??
-          'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80',
+      description:
+          json['description']?.toString() ??
+          'Deskripsi keindahan destinasi wisata.',
+      imageUrl: json['imageUrl']?.toString() ?? 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80',
+      galleryImages: (json['galleryImages'] as List<dynamic>? ?? const [])
+          .map((image) => image.toString())
+          .where((image) => image.isNotEmpty)
+          .toList(),
+      photoAttribution: json['photoAttribution']?.toString() ?? '',
     );
   }
 
@@ -48,7 +58,8 @@ class DestinasiModel {
       'location': location,
       'description': description,
       'imageUrl': imageUrl,
+      'galleryImages': galleryImages,
+      'photoAttribution': photoAttribution,
     };
   }
 }
-

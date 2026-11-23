@@ -9,6 +9,14 @@ import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import 'detail_gear_screen.dart';
 
+bool destinationMatchesCategory(DestinasiModel destination, String category) {
+  final normalizedCategory = category.toLowerCase();
+  return category == 'Semua' ||
+      destination.category.toLowerCase().contains(normalizedCategory) ||
+      (normalizedCategory == 'pulau' &&
+          destination.name.toLowerCase().startsWith('pulau '));
+}
+
 /// Halaman Menampilkan Seluruh Destinasi Labuan Bajo
 class AllDestinationsScreen extends StatefulWidget {
   final String? initialCategory;
@@ -537,8 +545,10 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                       d.location.toLowerCase().contains(_searchQuery.toLowerCase()) ||
                       d.category.toLowerCase().contains(_searchQuery.toLowerCase());
 
-                  final matchCat = _selectedCategory == 'Semua' ||
-                      d.category.toLowerCase().contains(_selectedCategory.toLowerCase());
+                  final matchCat = destinationMatchesCategory(
+                    d,
+                    _selectedCategory,
+                  );
 
                   return matchQuery && matchCat;
                 }).toList();

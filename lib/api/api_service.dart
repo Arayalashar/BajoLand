@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
+
 import '../models/destinasi_model.dart';
 
 /// Service REST API untuk Destinasi Wisata Labuan Bajo (Modul 5: HTTP Request & JSON Parsing)
@@ -17,9 +19,31 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        return data
-            .map((item) => DestinasiModel.fromJson(item as Map<String, dynamic>))
+        final destinations = data
+            .map(
+              (item) => DestinasiModel.fromJson(item as Map<String, dynamic>),
+            )
             .toList();
+        final localById = <int, DestinasiModel>{
+          for (final destination in _fallbackDestinasi)
+            destination.id: destination,
+        };
+        final byId = <int, DestinasiModel>{};
+        for (final destination in destinations) {
+          final local = localById[destination.id];
+          byId[destination.id] = local == null
+              ? destination
+              : DestinasiModel.fromJson({
+                  ...destination.toJson(),
+                  'imageUrl': local.imageUrl,
+                  'galleryImages': local.galleryImages,
+                  'photoAttribution': local.photoAttribution,
+                });
+        }
+        for (final destination in _fallbackDestinasi) {
+          byId.putIfAbsent(destination.id, () => destination);
+        }
+        return byId.values.toList();
       } else {
         throw Exception('Server merespons kode: ${response.statusCode}');
       }
@@ -54,10 +78,12 @@ class ApiService {
       ticketPrice: 150000.0,
       rating: 4.9,
       location: 'Kepulauan Komodo, Labuan Bajo',
-      description:
-          'Pulau Padar merupakan pulau ketiga terbesar di kawasan Taman Nasional Komodo yang terkenal dengan panorama puncaknya yang luar biasa spektakuler. Dari puncak bukit tertinggi, pengunjung dapat menyaksikan perpaduan dramatis tiga lekukan teluk alami dengan gradasi warna pasir berbeda, yaitu putih bersih, abu-abu arang, hingga rona merah muda yang memesona. Jalur pendakian telah dilengkapi anak tangga teratur yang aman, menjadikannya destinasi wajib untuk menikmati momen matahari terbit maupun senja terbaik di Labuan Bajo dengan latar lautan Flores yang megah.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80',
+      description: 'Pulau Padar merupakan pulau ketiga terbesar di kawasan Taman Nasional Komodo yang terkenal dengan panorama puncaknya yang luar biasa spektakuler. Dari puncak bukit tertinggi, pengunjung dapat menyaksikan perpaduan dramatis tiga lekukan teluk alami dengan gradasi warna pasir berbeda, yaitu putih bersih, abu-abu arang, hingga rona merah muda yang memesona. Jalur pendakian telah dilengkapi anak tangga teratur yang aman, menjadikannya destinasi wajib untuk menikmati momen matahari terbit maupun senja terbaik di Labuan Bajo dengan latar lautan Flores yang megah.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Eksotisme_Pulau_padar_Labuan_Bajo.jpg/960px-Eksotisme_Pulau_padar_Labuan_Bajo.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/11/Eksotisme_Pulau_padar_Labuan_Bajo_2.jpg/960px-Eksotisme_Pulau_padar_Labuan_Bajo_2.jpg',
+      ],
+      photoAttribution: 'Foto: Mufidqa91 / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Eksotisme_Pulau_padar_Labuan_Bajo.jpg; https://commons.wikimedia.org/wiki/File:Eksotisme_Pulau_padar_Labuan_Bajo_2.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
     ),
     const DestinasiModel(
       id: 2,
@@ -66,10 +92,12 @@ class ApiService {
       ticketPrice: 50000.0,
       rating: 4.8,
       location: 'Pulau Komodo, Labuan Bajo',
-      description:
-          'Pink Beach atau Pantai Merah adalah salah satu dari segelintir pantai di dunia yang memiliki pasir berwarna merah muda alami. Rona merah muda ini tercipta dari serpihan mikroorganisme foraminifera bersel tunggal merah yang bercampur sempurna dengan butiran pasir putih lembut. Dikelilingi bukit sabana hijau dan air laut toska yang sebening kristal, pantai ini merupakan surga snorkeling kelas dunia dengan terumbu karang warna-warni yang kaya serta beragam biota laut tropis yang hidup tepat beberapa meter dari bibir pantai.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+      description: 'Pink Beach atau Pantai Merah adalah salah satu dari segelintir pantai di dunia yang memiliki pasir berwarna merah muda alami. Rona merah muda ini tercipta dari serpihan mikroorganisme foraminifera bersel tunggal merah yang bercampur sempurna dengan butiran pasir putih lembut. Dikelilingi bukit sabana hijau dan air laut toska yang sebening kristal, pantai ini merupakan surga snorkeling kelas dunia dengan terumbu karang warna-warni yang kaya serta beragam biota laut tropis yang hidup tepat beberapa meter dari bibir pantai.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/43/Pink_Beach%2C_Padar_Island%2C_Komodo_National_Park%2C_Indonesia%2C_20250822_1108_2678.jpg/960px-Pink_Beach%2C_Padar_Island%2C_Komodo_National_Park%2C_Indonesia%2C_20250822_1108_2678.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8a/Pink_Beach%2C_Padar_Island%2C_Komodo_National_Park%2C_Indonesia%2C_20250822_1108_2680.jpg/960px-Pink_Beach%2C_Padar_Island%2C_Komodo_National_Park%2C_Indonesia%2C_20250822_1108_2680.jpg',
+      ],
+      photoAttribution: 'Foto: Jakub Hałun / Wikimedia Commons, CC BY 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Pink_Beach,_Padar_Island,_Komodo_National_Park,_Indonesia,_20250822_1108_2678.jpg; https://commons.wikimedia.org/wiki/File:Pink_Beach,_Padar_Island,_Komodo_National_Park,_Indonesia,_20250822_1108_2680.jpg. Lisensi: https://creativecommons.org/licenses/by/4.0',
     ),
     const DestinasiModel(
       id: 3,
@@ -78,10 +106,9 @@ class ApiService {
       ticketPrice: 250000.0,
       rating: 4.9,
       location: 'Taman Nasional Komodo, NTT',
-      description:
-          'Loh Liang di Pulau Komodo adalah pintu gerbang utama penjelajahan alam liar untuk menyaksikan kadal purba terbesar di dunia, Varanus komodoensis, langsung di habitat aslinya. Ditemani oleh ranger atau jagawana berpengalaman, pengunjung akan diajak menyusuri hutan musim tropis, padang sabana luas, serta lembah teduh yang dihuni berbagai satwa eksotis lainnya seperti rusa timor, babi hutan, burung kakatua jambul kuning, dan elang Flores. Pengalaman trekking di kawasan situs warisan dunia UNESCO ini memberikan sensasi petualangan purbakala yang tiada duanya.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1596401057633-54a8fe8ef647?auto=format&fit=crop&w=800&q=80',
+      description: 'Loh Liang di Pulau Komodo adalah pintu gerbang utama penjelajahan alam liar untuk menyaksikan kadal purba terbesar di dunia, Varanus komodoensis, langsung di habitat aslinya. Ditemani oleh ranger atau jagawana berpengalaman, pengunjung akan diajak menyusuri hutan musim tropis, padang sabana luas, serta lembah teduh yang dihuni berbagai satwa eksotis lainnya seperti rusa timor, babi hutan, burung kakatua jambul kuning, dan elang Flores. Pengalaman trekking di kawasan situs warisan dunia UNESCO ini memberikan sensasi petualangan purbakala yang tiada duanya.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/Komodo_dragon_%28Varanus_komodoensis%29.jpg/960px-Komodo_dragon_%28Varanus_komodoensis%29.jpg',
+      photoAttribution: 'Foto: Charles J. Sharp / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Komodo_dragon_(Varanus_komodoensis).jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
     ),
     const DestinasiModel(
       id: 4,
@@ -90,10 +117,9 @@ class ApiService {
       ticketPrice: 100000.0,
       rating: 4.9,
       location: 'Selat Linta, Kepulauan Komodo',
-      description:
-          'Manta Point atau Karang Makassar adalah spot perairan terbuka legendaris di Selat Linta yang menjadi habitat pembersihan (cleaning station) sekaligus perburuan plankton bagi kawanan pari manta raksasa (Manta birostris). Di titik ini, wisatawan dan penyelam dapat berenang berdampingan secara aman dengan pari manta yang memiliki rentang sayap mencapai hingga 4-5 meter saat mereka meluncur anggun di kedalaman laut biru toska. Kejernihan air yang luar biasa dan hamparan karang bawah laut yang luas membuat pengalaman snorkeling dan diving di sini begitu magis dan tak terlupakan.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
+      description: 'Manta Point atau Karang Makassar adalah spot perairan terbuka legendaris di Selat Linta yang menjadi habitat pembersihan (cleaning station) sekaligus perburuan plankton bagi kawanan pari manta raksasa (Manta birostris). Di titik ini, wisatawan dan penyelam dapat berenang berdampingan secara aman dengan pari manta yang memiliki rentang sayap mencapai hingga 4-5 meter saat mereka meluncur anggun di kedalaman laut biru toska. Kejernihan air yang luar biasa dan hamparan karang bawah laut yang luas membuat pengalaman snorkeling dan diving di sini begitu magis dan tak terlupakan.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/A_Flying_Manta_ray.jpg/960px-A_Flying_Manta_ray.jpg',
+      photoAttribution: 'Foto: Siharaditia / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:A_Flying_Manta_ray.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
     ),
     const DestinasiModel(
       id: 5,
@@ -102,10 +128,9 @@ class ApiService {
       ticketPrice: 35000.0,
       rating: 4.7,
       location: 'Desa Rangko, Labuan Bajo',
-      description:
-          'Goa Rangko adalah destinasi tersembunyi yang unik di kawasan pesisir utara Labuan Bajo, menyajikan pesona kolam air asin alami di dalam rongga gua karst yang sunyi dan magis. Keistimewaan terbesar gua ini terjadi antara pukul 12.00 hingga 14.00 WITA, saat sinar matahari masuk menembus celah langit-langit gua dan menerangi air kolam hingga berkilau biru toska menyala. Pengunjung dapat berenang dan mengapung dengan rileks di air asin yang sejuk sambil mengagumi formasi bebatuan stalaktit dan stalagmit purba berukir indah yang menggantung di sekeliling dinding gua.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80',
+      description: 'Goa Rangko adalah destinasi tersembunyi yang unik di kawasan pesisir utara Labuan Bajo, menyajikan pesona kolam air asin alami di dalam rongga gua karst yang sunyi dan magis. Keistimewaan terbesar gua ini terjadi antara pukul 12.00 hingga 14.00 WITA, saat sinar matahari masuk menembus celah langit-langit gua dan menerangi air kolam hingga berkilau biru toska menyala. Pengunjung dapat berenang dan mengapung dengan rileks di air asin yang sejuk sambil mengagumi formasi bebatuan stalaktit dan stalagmit purba berukir indah yang menggantung di sekeliling dinding gua.',
+      imageUrl: 'https://i.pinimg.com/originals/6f/f8/5f/6ff85f1f19b6ea5331c3ec2bd0d1468e.jpg',
+      photoAttribution: 'Foto: @deriabdulaziz. Sumber: https://www.pinterest.com/pin/339669996882376348/',
     ),
     const DestinasiModel(
       id: 6,
@@ -114,10 +139,9 @@ class ApiService {
       ticketPrice: 50000.0,
       rating: 4.8,
       location: 'Dekat Manta Point, Kepulauan Komodo',
-      description:
-          'Taka Makassar adalah atol atau gosong pasir timbul berbentuk melengkung menyerupai bulan sabit yang berada di tengah perairan dangkal laut Labuan Bajo. Pulau kecil tanpa vegetasi ini hanya muncul saat air laut surut dan dikelilingi oleh laguna berair dangkal dengan gradasi warna biru kehijauan yang sangat jernih. Kontras antara pasir putih halus dengan laut toska yang tenang menjadikannya lokasi favorit wisatawan untuk bersantai, berfoto estetik bergaya tropis, serta melakukan snorkeling ringan menjelajahi terumbu karang dangkal di sekeliling pulau.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=800&q=80',
+      description: 'Taka Makassar adalah atol atau gosong pasir timbul berbentuk melengkung menyerupai bulan sabit yang berada di tengah perairan dangkal laut Labuan Bajo. Pulau kecil tanpa vegetasi ini hanya muncul saat air laut surut dan dikelilingi oleh laguna berair dangkal dengan gradasi warna biru kehijauan yang sangat jernih. Kontras antara pasir putih halus dengan laut toska yang tenang menjadikannya lokasi favorit wisatawan untuk bersantai, berfoto estetik bergaya tropis, serta melakukan snorkeling ringan menjelajahi terumbu karang dangkal di sekeliling pulau.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/2/28/Beautiful_Taka_Makassar_Island.jpg/960px-Beautiful_Taka_Makassar_Island.jpg',
+      photoAttribution: 'Foto: Nickoasmara / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Beautiful_Taka_Makassar_Island.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
     ),
     const DestinasiModel(
       id: 7,
@@ -126,10 +150,13 @@ class ApiService {
       ticketPrice: 10000.0,
       rating: 4.7,
       location: 'Pusat Kota Labuan Bajo',
-      description:
-          'Dermaga Kampung Ujung adalah denyut nadi kehidupan maritim Labuan Bajo sekaligus destinasi wisata kuliner malam paling populer di pusat kota. Di sini bersandar jajaran kapal phinisi megah dan speedboat modern yang siap mengarungi perairan Komodo. Setiap petang hingga larut malam, area dermaga menjelma menjadi pasar kuliner tepi laut yang semarak, menyajikan aneka tangkapan hidangan laut segar seperti ikan kerapu bakar, cumi saus padang, lobster, dan udang bakar yang diolah langsung dengan cita rasa khas pesisir ditemani hembusan semilir angin laut malam Flores.',
-      imageUrl:
-          'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=800&q=80',
+      description: 'Dermaga Kampung Ujung adalah denyut nadi kehidupan maritim Labuan Bajo sekaligus destinasi wisata kuliner malam paling populer di pusat kota. Di sini bersandar jajaran kapal phinisi megah dan speedboat modern yang siap mengarungi perairan Komodo. Setiap petang hingga larut malam, area dermaga menjelma menjadi pasar kuliner tepi laut yang semarak, menyajikan aneka tangkapan hidangan laut segar seperti ikan kerapu bakar, cumi saus padang, lobster, dan udang bakar yang diolah langsung dengan cita rasa khas pesisir ditemani hembusan semilir angin laut malam Flores.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Labuan_Bajo_Harbour.jpg/960px-Labuan_Bajo_Harbour.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Labuan_Bajo%2C_a_port_in_West_Flores%2C_Nusa_Tenggara%2C_Indonesia%3B_January_2020.jpg/960px-Labuan_Bajo%2C_a_port_in_West_Flores%2C_Nusa_Tenggara%2C_Indonesia%3B_January_2020.jpg',
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Sore_di_Pasar_Kampung_Ujung_Labuan_Bajo_-_2023.jpg/960px-Sore_di_Pasar_Kampung_Ujung_Labuan_Bajo_-_2023.jpg',
+      ],
+      photoAttribution: 'Foto utama: Sgroey / Wikimedia Commons, CC BY-SA 4.0; foto galeri pelabuhan: Tiket2 / Wikimedia Commons, CC BY 2.0; foto kuliner: Beatrice Juliani Haru / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Labuan_Bajo_Harbour.jpg; https://commons.wikimedia.org/wiki/File:Labuan_Bajo,_a_port_in_West_Flores,_Nusa_Tenggara,_Indonesia;_January_2020.jpg; https://commons.wikimedia.org/wiki/File:Sore_di_Pasar_Kampung_Ujung_Labuan_Bajo_-_2023.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0 dan https://creativecommons.org/licenses/by/2.0',
     ),
     const DestinasiModel(
       id: 8,
@@ -138,10 +165,106 @@ class ApiService {
       ticketPrice: 0.0,
       rating: 4.8,
       location: 'Jl. Bandara Komodo, Labuan Bajo',
+      description: 'Bandara Internasional Komodo merupakan gerbang masuk udara utama yang modern dan representatif bagi para pelancong dari seluruh nusantara maupun mancanegara menuju surga pariwisata Labuan Bajo dan kepulauan Flores. Arsitektur terminalnya mengusung sentuhan kultural modern yang terinspirasi dari keunikan sisik hewan purba komodo dan keanggunan kain tenun ikat Manggarai. Terletak sangat strategis dekat dengan jantung kota dan pelabuhan, bandara ini dilengkapi fasilitas pelayanan lengkap yang menyambut setiap tamu dengan kenyamanan dan keramahan khas Nusa Tenggara Timur.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/KomodoAirport1.png/960px-KomodoAirport1.png',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b2/Komodo_20260815140244_259398d5-a66d-4d77-b6bc-a660086a2083-20260815-150208-0000-jpg.jpg/960px-Komodo_20260815140244_259398d5-a66d-4d77-b6bc-a660086a2083-20260815-150208-0000-jpg.jpg',
+      ],
+      photoAttribution: 'Foto: Direktorat Jenderal Perhubungan Udara, Wikimedia Commons, domain publik. Sumber: https://commons.wikimedia.org/wiki/File:KomodoAirport1.png; https://commons.wikimedia.org/wiki/File:Komodo_20260815140244_259398d5-a66d-4d77-b6bc-a660086a2083-20260815-150208-0000-jpg.jpg',
+    ),
+    const DestinasiModel(
+      id: 9,
+      name: 'Pulau Kelor',
+      category: 'Trekking & Pantai',
+      ticketPrice: 50000.0,
+      rating: 4.8,
+      location: 'Kepulauan Komodo, Labuan Bajo',
+      description: 'Pulau Kelor adalah pulau kecil di dekat Labuan Bajo yang terkenal dengan jalur trekking singkat menuju puncak bukitnya. Dari atas, pengunjung dapat menikmati panorama laut Flores dan pulau-pulau di sekitarnya. Pantainya yang berpasir putih dan airnya yang jernih juga cocok untuk berenang serta snorkeling.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Sea_View_from_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg/960px-Sea_View_from_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/On_Top_of_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg/960px-On_Top_of_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg',
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/9/93/Mountain_View_from_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg/960px-Mountain_View_from_Kelor_Island_-_Pulau_Kelor%2C_Labuan_Bajo.jpg',
+      ],
+      photoAttribution: 'Foto: AuroZephyr / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Sea_View_from_Kelor_Island_-_Pulau_Kelor,_Labuan_Bajo.jpg; https://commons.wikimedia.org/wiki/File:On_Top_of_Kelor_Island_-_Pulau_Kelor,_Labuan_Bajo.jpg; https://commons.wikimedia.org/wiki/File:Mountain_View_from_Kelor_Island_-_Pulau_Kelor,_Labuan_Bajo.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
+    ),
+    const DestinasiModel(
+      id: 10,
+      name: 'Pulau Kanawa',
+      category: 'Pantai & Snorkeling',
+      ticketPrice: 50000.0,
+      rating: 4.8,
+      location: 'Kepulauan Komodo, Labuan Bajo',
+      description: 'Pulau Kanawa berada di perairan Flores, tidak jauh dari Labuan Bajo. Pulau ini menawarkan pantai berpasir putih, air laut yang jernih, dan terumbu karang yang dapat dijelajahi dengan snorkeling. Bukit kecil di pulau ini juga menjadi tempat untuk melihat panorama laut dan matahari terbit.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Pulau_Kanawa%2C_Flores%2C_NTT.jpg/960px-Pulau_Kanawa%2C_Flores%2C_NTT.jpg',
+      photoAttribution: 'Foto: Stepgun / Wikimedia Commons, CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Pulau_Kanawa,_Flores,_NTT.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
+    ),
+    const DestinasiModel(
+      id: 11,
+      name: 'Gili Lawa Darat',
+      category: 'Trekking & Panorama',
+      ticketPrice: 50000.0,
+      rating: 4.8,
+      location: 'Taman Nasional Komodo, NTT',
+      description: 'Gili Lawa Darat terletak di utara Pulau Komodo dan dikenal dengan perbukitan sabana yang menghadap ke laut. Pendakian menuju puncak menyuguhkan pemandangan gugusan pulau dan perairan Taman Nasional Komodo, terutama saat matahari terbit atau terbenam.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Sunrise_at_Gili_Lawa_Darat_Island.jpg/960px-Sunrise_at_Gili_Lawa_Darat_Island.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3c/Pulau_Gili_Lawa%2C_Flores%2C_NTT.jpg/960px-Pulau_Gili_Lawa%2C_Flores%2C_NTT.jpg',
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e2/Pulau_Gili_Lawa%2C_Flores%2C_NTT_%282%29.jpg/960px-Pulau_Gili_Lawa%2C_Flores%2C_NTT_%282%29.jpg',
+      ],
+      photoAttribution: 'Foto utama: Kelly Marvella / Wikimedia Commons; foto galeri: Stepgun / Wikimedia Commons. CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Sunrise_at_Gili_Lawa_Darat_Island.jpg; https://commons.wikimedia.org/wiki/File:Pulau_Gili_Lawa,_Flores,_NTT.jpg; https://commons.wikimedia.org/wiki/File:Pulau_Gili_Lawa,_Flores,_NTT_(2).jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
+    ),
+    const DestinasiModel(
+      id: 12,
+      name: 'Goa Batu Cermin',
+      category: 'Gua & Geologi',
+      ticketPrice: 50000.0,
+      rating: 4.7,
+      location: 'Batu Cermin, Labuan Bajo',
+      description: 'Goa Batu Cermin adalah gua batu kapur dekat pusat Labuan Bajo. Ketika sinar matahari masuk melalui celah gua dan mengenai dinding batu yang mengandung mineral, pantulannya tampak seperti cermin. Pengunjung dapat menjelajahi lorong dan formasi batuan dengan pemandu lokal.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Mirror_Stone_Cave%2C_Flores%2C_Indonesia%2C_20250827_0928_3845.jpg/960px-Mirror_Stone_Cave%2C_Flores%2C_Indonesia%2C_20250827_0928_3845.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Mirror_Stone_Cave%2C_Flores%2C_Indonesia%2C_20250827_0931_3867.jpg/960px-Mirror_Stone_Cave%2C_Flores%2C_Indonesia%2C_20250827_0931_3867.jpg',
+      ],
+      photoAttribution: 'Foto: Jakub Hałun / Wikimedia Commons, CC BY 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Mirror_Stone_Cave,_Flores,_Indonesia,_20250827_0928_3845.jpg; https://commons.wikimedia.org/wiki/File:Mirror_Stone_Cave,_Flores,_Indonesia,_20250827_0931_3867.jpg. Lisensi: https://creativecommons.org/licenses/by/4.0',
+    ),
+    const DestinasiModel(
+      id: 13,
+      name: 'Pulau Rinca (Loh Buaya)',
+      category: 'Taman Nasional & Satwa',
+      ticketPrice: 150000.0,
+      rating: 4.8,
+      location: 'Taman Nasional Komodo, NTT',
+      description: 'Pulau Rinca merupakan bagian dari Taman Nasional Komodo. Dari kawasan Loh Buaya, pengunjung dapat mengikuti trekking bersama ranger untuk mengamati komodo dan bentang sabana pulau ini. Ikuti arahan ranger dan jaga jarak aman selama berada di habitat satwa liar.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Hewan_Komodo_di_Pulau_Rinca_sebuah_pulau_kecil_dekat_Pulau_Komodo%2C_Nusa_Tenggara_Timur%2C_Indonesia._Di_pulau_ini_hidup_berbagai_jenis_binatang_seperti_komodo%2C_babi_liar%2C_kerbau_dan_burung.jpg/960px-thumbnail.jpg',
+      galleryImages: [
+        'https://thumb.wikimedia.org/wikipedia/commons/thumb/b/ba/Decoy_Komodo_Nest_-_Pulau_Rinca_-_Komodo_National_Park.jpg/960px-Decoy_Komodo_Nest_-_Pulau_Rinca_-_Komodo_National_Park.jpg',
+      ],
+      photoAttribution: 'Foto utama: Dewicilay / Wikimedia Commons; foto galeri: AuroZephyr / Wikimedia Commons. CC BY-SA 4.0. Sumber: https://commons.wikimedia.org/wiki/File:Hewan_Komodo_di_Pulau_Rinca_sebuah_pulau_kecil_dekat_Pulau_Komodo,_Nusa_Tenggara_Timur,_Indonesia._Di_pulau_ini_hidup_berbagai_jenis_binatang_seperti_komodo,_babi_liar,_kerbau_dan_burung.jpg; https://commons.wikimedia.org/wiki/File:Decoy_Komodo_Nest_-_Pulau_Rinca_-_Komodo_National_Park.jpg. Lisensi: https://creativecommons.org/licenses/by-sa/4.0',
+    ),
+    const DestinasiModel(
+      id: 14,
+      name: 'Batu Bolong',
+      category: 'Diving & Snorkeling',
+      ticketPrice: 100000.0,
+      rating: 4.9,
+      location: 'Selat Linta, Taman Nasional Komodo',
+      description: 'Batu Bolong adalah puncak karang di Taman Nasional Komodo yang menjadi salah satu lokasi menyelam terkenal. Terumbu karangnya menjadi habitat beragam ikan tropis dan penyu; arus dapat berubah, sehingga penyelaman sebaiknya dilakukan bersama operator dan pemandu berpengalaman.',
+      imageUrl: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3d/Green_sea_turtle_at_Batu_Bolong.JPG/960px-Green_sea_turtle_at_Batu_Bolong.JPG',
+      photoAttribution: 'Foto: Alexander Vasenin / Wikimedia Commons, CC BY-SA 3.0. Sumber: https://commons.wikimedia.org/wiki/File:Green_sea_turtle_at_Batu_Bolong.JPG. Lisensi: https://creativecommons.org/licenses/by-sa/3.0',
+    ),
+    const DestinasiModel(
+      id: 15,
+      name: 'Taman Laut Handayani Seafood Restaurant',
+      category: 'Kuliner & Seafood',
+      ticketPrice: 0.0,
+      rating: 4.5,
+      location: 'Jl. Ir. Soekarno Hatta No. 9, Labuan Bajo',
       description:
-          'Bandara Internasional Komodo merupakan gerbang masuk udara utama yang modern dan representatif bagi para pelancong dari seluruh nusantara maupun mancanegara menuju surga pariwisata Labuan Bajo dan kepulauan Flores. Arsitektur terminalnya mengusung sentuhan kultural modern yang terinspirasi dari keunikan sisik hewan purba komodo dan keanggunan kain tenun ikat Manggarai. Terletak sangat strategis dekat dengan jantung kota dan pelabuhan, bandara ini dilengkapi fasilitas pelayanan lengkap yang menyambut setiap tamu dengan kenyamanan dan keramahan khas Nusa Tenggara Timur.',
+          'Taman Laut Handayani Seafood Restaurant adalah restoran seafood di tepi laut Labuan Bajo. Menu yang ditawarkan mencakup ikan bakar, udang, kepiting, dan hidangan laut lainnya dengan suasana makan terbuka dekat pelabuhan.',
       imageUrl:
-          'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80',
+          'https://lh3.googleusercontent.com/grass-cs/AABkmLcoQcxnmIrID1b1SP17XAXFEqu2Gu9jMVLTXd-ptKRKMuTptCkV7hh5pllv_GTSE6gBsw3IfkGCaNHN-10aiIPpjrPuwuG-qebHT8pnO_PVFtM-kc85Mx-RPgdaH-wDZ9kQ4gyc=s1360-w1360-h1020-rw',
+      photoAttribution:
+          'Foto: disediakan pengguna; hak penggunaan dikonfirmasi.',
     ),
   ];
 }

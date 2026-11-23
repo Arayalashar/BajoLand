@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../api/api_service.dart';
-import '../data/bajo_locations.dart';
 import '../models/destinasi_model.dart';
 import '../services/wishlist_service.dart';
 import '../theme/app_palette.dart';
@@ -31,20 +30,28 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
 
   List<String> _getGalleryImages(DestinasiModel dest) {
     final list = <String>[dest.imageUrl];
-    for (final b in bajoDestinations) {
-      if (b.imageUrl != dest.imageUrl && !list.contains(b.imageUrl)) {
-        list.add(b.imageUrl);
+    for (final image in dest.galleryImages) {
+      if (!list.contains(image)) {
+        list.add(image);
       }
     }
     return list.take(5).toList();
   }
 
   Future<void> _toggleWishlist(DestinasiModel dest) async {
-    final isAdded = await WishlistController.to.toggleWishlist(widget.productId);
+    final isAdded = await WishlistController.to.toggleWishlist(
+      widget.productId,
+    );
     if (isAdded) {
-      AppToast.success('Destinasi Disimpan', '${dest.name} berhasil disimpan di daftar Anda.');
+      AppToast.success(
+        'Destinasi Disimpan',
+        '${dest.name} berhasil disimpan di daftar Anda.',
+      );
     } else {
-      AppToast.info('Dihapus dari Simpan', '${dest.name} dihapus dari daftar simpan.');
+      AppToast.info(
+        'Dihapus dari Simpan',
+        '${dest.name} dihapus dari daftar simpan.',
+      );
     }
   }
 
@@ -96,7 +103,10 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         decoration: BoxDecoration(
                           color: AppPalette.surface,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppPalette.border, width: 1),
+                          border: Border.all(
+                            color: AppPalette.border,
+                            width: 1,
+                          ),
                           boxShadow: AppPalette.cardShadow,
                         ),
                         child: const Icon(
@@ -121,13 +131,17 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         color: AppPalette.error,
                       ),
                       const SizedBox(height: 12),
-                      Text('Gagal memuat detail destinasi', style: AppPalette.h3()),
+                      Text(
+                        'Gagal memuat detail destinasi',
+                        style: AppPalette.h3(),
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
                           setState(() {
-                            _destinasiFuture =
-                                ApiService.getDestinasiDetail(widget.productId);
+                            _destinasiFuture = ApiService.getDestinasiDetail(
+                              widget.productId,
+                            );
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -213,8 +227,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                                 onTap: () => Get.back(),
                               ),
                               Obx(() {
-                                final isFav =
-                                    WishlistController.to.isFavorite(dest.id);
+                                final isFav = WishlistController.to.isFavorite(
+                                  dest.id,
+                                );
                                 return _buildFloatingCircleButton(
                                   icon: isFav
                                       ? Icons.bookmark_rounded
@@ -263,7 +278,9 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -305,9 +322,44 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                   // 3. Galeri Foto
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      'Galeri Foto',
-                      style: AppPalette.h2().copyWith(fontSize: 17),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Galeri Foto',
+                          style: AppPalette.h2().copyWith(fontSize: 17),
+                        ),
+                        if (dest.photoAttribution.isNotEmpty)
+                          IconButton(
+                            tooltip: 'Kredit foto',
+                            visualDensity: VisualDensity.compact,
+                            icon: const Icon(
+                              Icons.info_outline_rounded,
+                              size: 19,
+                              color: AppPalette.textSecondary,
+                            ),
+                            onPressed: () {
+                              showDialog<void>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Kredit foto'),
+                                  content: SingleChildScrollView(
+                                    child: SelectableText(
+                                      dest.photoAttribution,
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(),
+                                      child: const Text('Tutup'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -340,7 +392,6 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 24),
 
                   // 4. Ulasan dan Rating
@@ -367,12 +418,13 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   '${dest.rating} (120+)',
-                                  style: AppPalette.caption(
-                                    color: AppPalette.textPrimary,
-                                  ).copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                  ),
+                                  style:
+                                      AppPalette.caption(
+                                        color: AppPalette.textPrimary,
+                                      ).copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
                                 ),
                               ],
                             ),
@@ -382,16 +434,14 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                         _buildReviewCard(
                           name: 'Rian Pratama',
                           date: '18 Nov 2026',
-                          comment:
-                              'Pemandangannya luar biasa indah! Sangat direkomendasikan datang saat matahari terbit atau pagi hari.',
+                          comment: 'Pemandangannya luar biasa indah! Sangat direkomendasikan datang saat matahari terbit atau pagi hari.',
                           rating: 5,
                         ),
                         const SizedBox(height: 10),
                         _buildReviewCard(
                           name: 'Sarah Wijaya',
                           date: '12 Nov 2026',
-                          comment:
-                              'Airnya sangat jernih dan pemandangan pulau-pulaunya memukau. Destinasi wajib jika ke Labuan Bajo!',
+                          comment: 'Airnya sangat jernih dan pemandangan pulau-pulaunya memukau. Destinasi wajib jika ke Labuan Bajo!',
                           rating: 5,
                         ),
                       ],
