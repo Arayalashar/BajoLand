@@ -9,7 +9,7 @@ import '../theme/app_palette.dart';
 import '../utils/date_formatter.dart';
 import 'root_screen.dart';
 
-/// Halaman Notifikasi & Pengingat Perjalanan (Design System BajoLand / Bookify)
+/// Pusat notifikasi yang merangkum jadwal dan kondisi anggaran dari penyimpanan lokal.
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
 
@@ -40,6 +40,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
       final List<Map<String, dynamic>> list = [];
 
+      // Daftar ini dirakit dari Hive/SharedPreferences dan informasi edukasi di bawah.
+      // Ini bukan riwayat push-notification dari server.
       // 1. Peringatan & Evaluasi Batas Anggaran
       final double totalSpent = allItems.fold(0.0, (sum, item) => sum + item.budget);
       if (totalSpent > maxBudget) {
@@ -301,6 +303,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ),
             const SizedBox(height: 20),
 
+            // Tombol aksi menutup lembar detail lalu memilih tab terkait di RootScreen.
             // Action Buttons
             Row(
               children: [
@@ -404,6 +407,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: Container(color: AppPalette.border, height: 1),
         ),
       ),
+      // Muat ulang memakai tarik-ke-bawah; warna latar membedakan item belum dibaca.
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppPalette.primary),

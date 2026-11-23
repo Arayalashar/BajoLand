@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/destinasi_model.dart';
 
-/// Service REST API untuk Destinasi Wisata Labuan Bajo (Modul 5: HTTP Request & JSON Parsing)
+/// Pengambil katalog destinasi; data fallback menjaga layar tetap dapat dipakai offline.
 class ApiService {
   /// URL Endpoint REST API publik di repository GitHub BajoLand
   static const String _baseUrl =
@@ -28,6 +28,8 @@ class ApiService {
           for (final destination in _fallbackDestinasi)
             destination.id: destination,
         };
+        // ID menjadi kunci: data server dipertahankan, tetapi media lokal yang sudah
+        // dikurasi dipakai untuk destinasi yang dikenal dan entri fallback yang hilang ditambahkan.
         final byId = <int, DestinasiModel>{};
         for (final destination in destinations) {
           final local = localById[destination.id];
@@ -69,7 +71,7 @@ class ApiService {
     }
   }
 
-  /// Data fallback siap saji (100% sinkron dengan bajo_locations.dart)
+  /// Katalog lokal untuk kondisi offline; jaga ID dan isi utamanya selaras dengan data peta.
   static final List<DestinasiModel> _fallbackDestinasi = [
     const DestinasiModel(
       id: 1,

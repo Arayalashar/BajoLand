@@ -1,4 +1,4 @@
-/// Model Data Lokasi & Konstanta Koordinat Labuan Bajo (Modul 3 & Modul 7)
+/// Data peta untuk satu destinasi, termasuk koordinat yang dipakai Geolocator.
 class LocationData {
   final int id;
   final String name;
@@ -26,7 +26,7 @@ class LocationData {
     this.distanceInMeters,
   });
 
-  /// Format jarak dalam kilometer atau meter yang rapi
+  /// Jarak yang sudah dihitung ditampilkan dalam meter (< 1 km) atau kilometer.
   String get formattedDistance {
     if (distanceInMeters == null) return 'Jarak belum dihitung';
     if (distanceInMeters! < 1000) {
@@ -36,11 +36,11 @@ class LocationData {
     return '${km.toStringAsFixed(2)} km';
   }
 
-  /// Menandai apakah lokasi berada dekat (< 500 meter)
+  /// Penanda dekat dipakai UI bila jarak hasil GPS kurang dari 500 meter.
   bool get isNear => distanceInMeters != null && distanceInMeters! < 500;
 }
 
-/// Daftar destinasi Labuan Bajo (Sinkron dengan Katalog API)
+/// Sumber marker dan kartu Radar; ID/nama/kategori/media diselaraskan dengan katalog API.
 final List<LocationData> bajoDestinations = [
   LocationData(
     id: 1,

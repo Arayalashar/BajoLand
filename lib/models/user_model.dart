@@ -1,5 +1,6 @@
-/// Model User untuk autentikasi login (Modul 3: Model Class)
+/// Data akun pengguna; akun persisten dikelola oleh UserStorage.
 class UserModel {
+  // `email` dan `username` saling menjadi fallback agar formulir lama tetap kompatibel.
   final String email;
   final String username;
   final String password;
@@ -21,6 +22,7 @@ class UserModel {
   };
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Data lama mungkin hanya menyimpan salah satu kunci: email atau username.
     final identifier = (json['email'] ?? json['username'] ?? '') as String;
     return UserModel(
       email: identifier,
@@ -30,7 +32,7 @@ class UserModel {
     );
   }
 
-  /// Daftar akun bawaan untuk reserved username pengujian praktikum
+  /// Akun demo yang juga dipakai UserStorage untuk menolak nama akun duplikat.
   static const List<UserModel> registeredUsers = [
     UserModel(
       username: 'arya',
@@ -46,7 +48,7 @@ class UserModel {
     ),
   ];
 
-  /// Validasi kredensial login
+  /// Placeholder lama; verifikasi akun tersimpan dilakukan lewat UserStorage.authenticate.
   static UserModel? authenticate(String identifier, String password) {
     return null;
   }

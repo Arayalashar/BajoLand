@@ -6,8 +6,7 @@ import '../theme/app_palette.dart';
 
 enum ToastType { success, error, info, warning }
 
-/// Sistem Notifikasi Toast & Feedback SnackBar BajoLand
-/// Dibuat rapi, berdurasi singkat (1.8s), dan konsisten dengan design system
+/// Toast singkat dengan ikon, warna, dan border yang menyesuaikan jenis pesannya.
 class AppToast {
   static void show({
     required String title,
@@ -20,6 +19,7 @@ class AppToast {
     IconData icon;
     Color borderColor;
 
+    // Satu pemetaan status menentukan warna ikon, latar ikon, dan garis kartu toast.
     switch (type) {
       case ToastType.success:
         iconColor = AppPalette.success;
@@ -52,6 +52,7 @@ class AppToast {
       Get.closeCurrentSnackbar();
     }
 
+    // Snackbar dibuat transparan agar kartu kustom di bawahnya yang mengatur bentuk dan bayangan.
     Get.rawSnackbar(
       snackPosition: SnackPosition.TOP,
       duration: duration,

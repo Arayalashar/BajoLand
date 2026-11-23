@@ -2,7 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
-/// Service Notifikasi Lokal (Modul 7: Singleton Pattern, Immediate & Scheduled Notification)
+/// Satu pintu untuk izin, timezone, notifikasi langsung, dan pengingat terjadwal.
 class NotificationService {
   NotificationService._internal();
   static final NotificationService instance = NotificationService._internal();
@@ -10,6 +10,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  // Mencegah plugin diinisialisasi berulang kali selama aplikasi berjalan.
   bool _isInitialized = false;
 
   /// Inisialisasi plugin notifikasi dan deteksi timezone lokal perangkat
@@ -50,6 +51,7 @@ class NotificationService {
     final offset = DateTime.now().timeZoneOffset;
     String locationName = 'UTC';
 
+    // Offset UTC+7/8/9 dipetakan ke zona Indonesia; offset lain dicari dari database timezone.
     if (offset.inHours == 7) {
       locationName = 'Asia/Jakarta';
     } else if (offset.inHours == 8) {
@@ -136,6 +138,7 @@ class NotificationService {
       return;
     }
 
+    // Plugin menerima TZDateTime supaya pengingat mengikuti zona waktu perangkat.
     final tz.TZDateTime tzScheduled =
         tz.TZDateTime.from(scheduledDate, tz.local);
 

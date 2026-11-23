@@ -9,7 +9,7 @@ import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import 'add_itinerary_screen.dart';
 
-/// Halaman Detail Destinasi Wisata BajoLand
+/// Detail satu destinasi: foto, deskripsi, galeri, ulasan contoh, favorit, dan CTA itinerary.
 class DetailGearScreen extends StatefulWidget {
   final int productId;
 
@@ -29,6 +29,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
   }
 
   List<String> _getGalleryImages(DestinasiModel dest) {
+    // Foto utama selalu menjadi item pertama; hilangkan duplikat dan batasi galeri ke lima.
     final list = <String>[dest.imageUrl];
     for (final image in dest.galleryImages) {
       if (!list.contains(image)) {
@@ -71,6 +72,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Isi detail digulir, sementara biaya dan tombol rencana tetap menempel di bawah.
     return Scaffold(
       backgroundColor: AppPalette.background,
       body: FutureBuilder<DestinasiModel>(
@@ -394,6 +396,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Ulasan berikut adalah konten contoh statis, bukan data dari layanan ulasan.
                   // 4. Ulasan dan Rating
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -451,6 +454,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
               ),
             ),
 
+            // Bilah aksi tetap terlihat agar biaya dan tombol itinerary mudah dijangkau.
             // 5. Bottom Navigation Bar: Estimasi Biaya & Tombol Rencana
             bottomNavigationBar: Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -545,6 +549,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
     required Color iconColor,
     required VoidCallback onTap,
   }) {
+    // Tombol lingkaran dipakai untuk aksi kembali dan favorit di atas foto utama.
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -576,6 +581,7 @@ class _DetailGearScreenState extends State<DetailGearScreen> {
     required String comment,
     required int rating,
   }) {
+    // Kartu ulasan reusable: identitas, tanggal, bintang, lalu isi komentar.
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

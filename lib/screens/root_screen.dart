@@ -10,7 +10,7 @@ import 'itinerary_screen.dart';
 import 'lbs_screen.dart';
 import 'profile_screen.dart';
 
-/// Halaman Induk Navigasi Tab Bar (Modul 4: GetX Navigation & State Management)
+/// Pemilik lima tab utama serta data profil reaktif yang dipakai oleh layar-layar anak.
 class RootScreen extends StatefulWidget {
   final String userName;
 
@@ -23,6 +23,7 @@ class RootScreen extends StatefulWidget {
   State<RootScreen> createState() => _RootScreenState();
 }
 
+/// State bersama untuk tab terpilih, profil, dan filter itinerary yang dibuka dari notifikasi.
 class RootNavigationController extends GetxController {
   final selectedIndex = 0.obs;
   final itineraryFilter = 0.obs;
@@ -77,6 +78,7 @@ class RootNavigationController extends GetxController {
     }
   }
 
+  /// Berpindah tab dan, bila diminta, membawa filter untuk halaman itinerary.
   void selectTab(int index, {int? itineraryFilter}) {
     if (itineraryFilter != null) {
       this.itineraryFilter.value = itineraryFilter;
@@ -116,6 +118,7 @@ class _RootScreenState extends State<RootScreen> {
     return Obx(
       () => Scaffold(
         backgroundColor: AppPalette.background,
+        // IndexedStack menyimpan state tiap tab saat pengguna berpindah menu.
         body: IndexedStack(
           index: _controller.selectedIndex.value,
           children: _screens,
@@ -190,6 +193,7 @@ class _RootScreenState extends State<RootScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Latar kapsul hanya muncul pada tab aktif; radius penuh membentuk pil.
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeOutCubic,

@@ -8,7 +8,7 @@ import '../theme/app_palette.dart';
 import '../utils/date_formatter.dart';
 import 'add_itinerary_screen.dart';
 
-/// Halaman Riwayat Perjalanan & Pengeluaran Wisata (Design System BajoLand / Bookify)
+/// Riwayat agenda dari Hive; jika belum ada yang lewat, agenda tersimpan tetap ditampilkan.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -69,6 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Container(color: AppPalette.border, height: 1),
         ),
       ),
+      // Dengarkan box Hive agar riwayat selalu berasal dari penyimpanan lokal terbaru.
       body: ValueListenableBuilder<Box<ItineraryItem>>(
         valueListenable: Hive.box<ItineraryItem>('itineraries').listenable(),
         builder: (context, box, _) {
@@ -84,6 +85,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             totalHistorySpent += item.budget;
           }
 
+          // Tampilan kosong mengarahkan pengguna membuat agenda pertama.
           if (displayItems.isEmpty) {
             return Center(
               child: Padding(
@@ -137,6 +139,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Kartu ringkasan membedakan total dana tercatat dari daftar agenda di bawahnya.
                 // ─── Kartu Ringkasan Riwayat Pengeluaran
                 Container(
                   width: double.infinity,

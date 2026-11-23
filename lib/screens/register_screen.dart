@@ -8,7 +8,7 @@ import '../services/user_storage.dart';
 import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 
-/// Halaman Pendaftaran Akun Baru (Bahasa Indonesia & Bersih Tanpa Social Login)
+/// Form daftar yang memvalidasi data, menyimpan akun lokal, lalu mengembalikan email ke Login.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -38,6 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  /// Validasi formulir dan persetujuan, lalu simpan akun sebelum kembali ke halaman login.
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -83,6 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required String hintText,
     required Widget suffixIcon,
   }) {
+    // Satu dekorasi dipakai semua field agar padding, border, dan radius konsisten.
     return InputDecoration(
       hintText: hintText,
       hintStyle: GoogleFonts.inter(
@@ -170,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. Logo Saja di Tengah (Tanpa Teks BajoLand)
+                  // Logo, judul, dan subjudul menjadi pengenal awal halaman pendaftaran.
                   Center(
                     child: Image.asset(
                       'assets/images/logo.png',

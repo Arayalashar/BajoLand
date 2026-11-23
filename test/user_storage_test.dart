@@ -6,10 +6,12 @@ import 'package:bajoland/services/user_storage.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // Setiap test memakai preferensi kosong agar akun dari test lain tidak terbawa.
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  // Cakupan penyimpanan: akun bisa dipakai login, sedangkan password salah ditolak.
   test('registered users persist and can authenticate', () async {
     final storage = UserStorage();
     const user = UserModel(
@@ -26,6 +28,7 @@ void main() {
     expect(await storage.authenticate('jalanjalan', 'salah'), isNull);
   });
 
+  // Username bawaan maupun yang pernah disimpan tidak boleh didaftarkan ulang.
   test('registration rejects duplicate usernames case-insensitively', () async {
     final storage = UserStorage();
 
@@ -71,6 +74,7 @@ void main() {
     );
   });
 
+  // Data identitas kosong harus ditolak sebelum ditulis ke SharedPreferences.
   test('registration rejects empty account fields', () async {
     final storage = UserStorage();
 

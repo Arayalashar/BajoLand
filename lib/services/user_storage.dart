@@ -4,13 +4,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
 
-/// Penyimpanan akun lokal menggunakan SharedPreferences (Modul 6).
+/// Menyimpan akun terdaftar sebagai JSON dalam SharedPreferences.
 class UserStorage {
   static const String _usersKey = 'registeredUsers';
 
   Future<List<UserModel>> _loadUsers() async {
     final prefs = await SharedPreferences.getInstance();
     final encodedUsers = prefs.getStringList(_usersKey) ?? [];
+    // Setiap akun disimpan sebagai satu string JSON di dalam daftar preferensi.
     return encodedUsers
         .map(
           (encodedUser) => UserModel.fromJson(
@@ -27,6 +28,7 @@ class UserStorage {
       return false;
     }
 
+    // Normalisasi huruf mencegah akun yang sama didaftarkan dengan kapitalisasi berbeda.
     final normalized = account.toLowerCase();
     final existingUsers = await _loadUsers();
     final isDuplicate = UserModel.registeredUsers.any(

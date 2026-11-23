@@ -12,9 +12,7 @@ import '../utils/app_toast.dart';
 import 'login_screen.dart';
 import 'root_screen.dart';
 
-/// Halaman Profil Sederhana (Simple Profile Screen)
-/// Desain bersih & minimalis sesuai Design System BajoLand
-/// Mendukung penggantian foto profil dari Galeri perangkat
+/// Pengaturan profil: foto, data akun, izin notifikasi, informasi aplikasi, dan logout.
 class ProfileScreen extends StatefulWidget {
   final String userName;
 
@@ -49,6 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final savedAvatar = prefs.getString('userAvatar');
     final savedNotif = prefs.getBool('notificationsEnabled');
 
+    // Email diselaraskan kembali dengan akun lokal jika preferensi belum memilikinya.
     // Pastikan email sinkron dengan akun yang didaftarkan di UserStorage
     if (savedEmail == null || savedEmail.isEmpty) {
       final lookupName = savedName ?? (rootCtrl != null && rootCtrl.userName.value.isNotEmpty ? rootCtrl.userName.value : _userName);
@@ -449,6 +448,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
+            // Avatar memakai ClipOval agar sumber foto apa pun tampil bulat.
             // ─── 1. FOTO DITENGAH, NAMA, & EMAIL ───────────────────────────
             Center(
               child: Column(
@@ -556,6 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 32),
 
+            // Satu kartu beradius besar mengelompokkan pengaturan profil terkait.
             // ─── 2. MENU VERTIKAL SEDERHANA ───────────────────────────────
             Container(
               decoration: BoxDecoration(

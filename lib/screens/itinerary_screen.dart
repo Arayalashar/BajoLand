@@ -13,7 +13,7 @@ import '../utils/date_formatter.dart';
 import 'add_itinerary_screen.dart';
 import 'root_screen.dart';
 
-/// Halaman Rundown Harian & Manajemen Anggaran Wisata (BajoLand)
+/// Daftar itinerary reaktif: batas/total anggaran, filter waktu, dan timeline per hari.
 class ItineraryScreen extends StatefulWidget {
   final int? initialFilter;
 
@@ -50,6 +50,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     }
   }
 
+  /// Membaca batas pengeluaran terakhir dari preferensi lokal.
   Future<void> _loadMaxBudget() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -57,6 +58,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     });
   }
 
+  /// Menyimpan batas baru, menyegarkan ringkasan, lalu memberi konfirmasi notifikasi.
   Future<void> _saveMaxBudget(double newBudget) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('maxBudget', newBudget);
@@ -160,11 +162,13 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
           child: Container(color: AppPalette.border, height: 1),
         ),
       ),
+      // Hive memberi notifikasi perubahan sehingga total, filter, dan timeline ikut dirender ulang.
       body: ValueListenableBuilder<Box<ItineraryItem>>(
         valueListenable: Hive.box<ItineraryItem>('itineraries').listenable(),
         builder: (context, box, _) {
           final allItems = box.values.toList();
 
+          // Ringkasan dihitung dari semua agenda, bukan hanya agenda yang lolos filter.
           // Hitung total anggaran
           double totalSpent = 0.0;
           for (final item in allItems) {
@@ -218,7 +222,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // ─── 1. Ringkasan Anggaran Wisata ─────────────────────────────
+              // ─── 1. Ringkasan Anggaran Wisata; warna berubah saat melewati batas ──
               _buildBudgetCard(
                 totalSpent: totalSpent,
                 remainingBudget: remainingBudget,
@@ -296,6 +300,8 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
 
               const SizedBox(height: 16),
 
+              // ─── 4. Agenda dikelompokkan per tanggal dan ditampilkan sebagai timeline.
+              //       Kartu merah menandai jadwal yang berselisih kurang dari 90 menit.
               // ─── 4. Konten Rundown Harian ─────────────────────────────────
               if (allItems.isEmpty)
                 _buildEmptyState()
@@ -436,6 +442,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     );
   }
 
+  // Node kiri menunjukkan waktu/status; kartu kanan memuat detail, edit, dan swipe-hapus.
   // ─── Widget Timeline Node & Card Rundown ─────────────────────────────────
   Widget _buildTimelineItem({
     required BuildContext context,
@@ -784,6 +791,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     required int totalItems,
     required VoidCallback onEditBudget,
   }) {
+    // Kartu ringkasan memakai radius besar; gradien merah menandakan anggaran terlampaui.
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -884,6 +892,7 @@ class _ItineraryScreenState extends State<ItineraryScreen> {
     );
   }
 
+  // Filter berbentuk pil; pilihannya juga disimpan di controller tab utama.
   // ─── Filter Pills Row ────────────────────────────────────────────────────
   Widget _buildFilterPill({required String label, required int index}) {
     final isSelected = _selectedFilter == index;

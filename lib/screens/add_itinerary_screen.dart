@@ -11,7 +11,7 @@ import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import '../utils/date_formatter.dart';
 
-/// Form Tambah/Edit Jadwal & Anggaran (Design System BajoLand / Bookify)
+/// Form buat atau ubah agenda Hive, termasuk pengecekan bentrok dan pengingat lokal.
 class AddItineraryScreen extends StatefulWidget {
   final ItineraryItem? item;
   final int? index;
@@ -77,6 +77,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     super.dispose();
   }
 
+  /// Pilih tanggal lalu gabungkan dengan jam yang sedang dipilih.
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -109,6 +110,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     }
   }
 
+  /// Pilih jam lalu gabungkan dengan tanggal yang sedang dipilih.
   Future<void> _pickTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -141,6 +143,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
   }
 
   ItineraryItem? _checkConflict(DateTime candidate) {
+    // Agenda pada hari sama dengan jarak waktu < 90 menit dianggap berpotensi bentrok.
     if (!Hive.isBoxOpen('itineraries')) return null;
     final box = Hive.box<ItineraryItem>('itineraries');
     for (var i = 0; i < box.length; i++) {
@@ -162,6 +165,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     return null;
   }
 
+  /// Simpan baru/perbarui agenda, jadwalkan notifikasi, lalu cek total batas anggaran.
   Future<void> _saveItinerary() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -320,6 +324,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
     } catch (_) {}
   }
 
+  /// Kartu pemilih tanggal/jam; radius sedang mengikuti bentuk kontrol pada design system.
   Widget _dateTimeCard({
     required IconData icon,
     required String label,
@@ -411,6 +416,7 @@ class _AddItineraryScreenState extends State<AddItineraryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Kedua kartu memisahkan informasi agenda dan nominal anggaran agar form mudah dipindai.
               // ─── Kartu Informasi Destinasi & Aktivitas
               Container(
                 padding: const EdgeInsets.all(20),

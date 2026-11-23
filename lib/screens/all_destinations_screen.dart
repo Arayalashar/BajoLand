@@ -9,6 +9,7 @@ import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import 'detail_gear_screen.dart';
 
+/// Cocokkan filter kategori; nama "Pulau ..." tetap masuk filter Pulau walau kategori lain.
 bool destinationMatchesCategory(DestinasiModel destination, String category) {
   final normalizedCategory = category.toLowerCase();
   return category == 'Semua' ||
@@ -17,7 +18,7 @@ bool destinationMatchesCategory(DestinasiModel destination, String category) {
           destination.name.toLowerCase().startsWith('pulau '));
 }
 
-/// Halaman Menampilkan Seluruh Destinasi Labuan Bajo
+/// Katalog lengkap dengan pencarian, filter kategori, favorit, dan tautan ke detail.
 class AllDestinationsScreen extends StatefulWidget {
   final String? initialCategory;
   final bool showBackButton;
@@ -416,6 +417,7 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
       ),
       body: Column(
         children: [
+          // Pencarian dan filter berada di luar daftar agar tetap terlihat saat hasil digulir.
           // ─── Search Bar (Background Menyatu dengan Halaman) ───
           Container(
             color: AppPalette.background,
@@ -539,6 +541,7 @@ class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
                 }
 
                 final allDest = snapshot.data!;
+                // Nama, alamat, dan kategori dicari bersama; hasil lalu dipersempit oleh chip.
                 final filtered = allDest.where((d) {
                   final matchQuery = _searchQuery.isEmpty ||
                       d.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||

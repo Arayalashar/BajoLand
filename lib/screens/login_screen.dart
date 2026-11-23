@@ -9,7 +9,7 @@ import '../utils/app_toast.dart';
 import 'register_screen.dart';
 import 'root_screen.dart';
 
-/// Halaman Login Autentikasi Pengguna (Bahasa Indonesia & Bersih Tanpa Social Login)
+/// Form masuk: memeriksa akun lokal, menyimpan sesi, lalu membuka navigasi utama.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -49,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Proses validasi dan eksekusi login
+  /// Validasi input -> cek akun lokal -> simpan sesi -> pindah ke RootScreen.
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -116,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // SafeArea menjaga form dari notch; scroll memungkinkan form tetap dipakai di layar pendek.
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(

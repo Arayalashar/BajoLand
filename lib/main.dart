@@ -62,6 +62,7 @@ class BajoLandApp extends StatelessWidget {
       title: 'BajoLand',
       debugShowCheckedModeBanner: false,
       defaultTransition: Transition.fadeIn,
+      // Tema global agar warna, teks, AppBar, dan snackbar konsisten di semua layar.
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: AppPalette.background,

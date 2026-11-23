@@ -1,7 +1,7 @@
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
-/// Helper formatting tanggal yang aman terhadap Hot Reload dan LocaleDataException
+/// Satu tempat untuk format tanggal/jam Indonesia dengan format numerik cadangan.
 class AppDateFormatter {
   static bool _initialized = false;
 
@@ -19,6 +19,7 @@ class AppDateFormatter {
 
   /// Format tanggal & jam lengkap (contoh: 21 Nov 2026, 14:30)
   static String formatFull(DateTime dateTime) {
+    // Coba locale Indonesia terlebih dahulu; fallback mencegah tampilan gagal bila locale tidak tersedia.
     try {
       return DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(dateTime);
     } catch (_) {

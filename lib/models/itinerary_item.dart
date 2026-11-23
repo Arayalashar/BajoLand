@@ -2,9 +2,10 @@ import 'package:hive/hive.dart';
 
 part 'itinerary_item.g.dart';
 
-/// Model Database Lokal Hive untuk Jadwal & Anggaran (Modul 3 & Modul 6: HiveObject)
+/// Satu agenda perjalanan yang disimpan permanen di box Hive `itineraries`.
 @HiveType(typeId: 0)
 class ItineraryItem extends HiveObject {
+  // Nomor HiveField adalah kunci penyimpanan; jangan ubah nomor data yang sudah ada.
   @HiveField(0)
   String destination;
 

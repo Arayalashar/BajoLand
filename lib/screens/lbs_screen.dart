@@ -9,8 +9,7 @@ import '../theme/app_palette.dart';
 import '../utils/app_toast.dart';
 import 'detail_gear_screen.dart';
 
-/// Halaman Radar Destinasi Bajo (Peta Fullframe, Rute Bahari Realistis, & Card Carousel)
-/// Desain modern, bersih, dan 100% konsisten dengan Design System BajoLand / Bookify
+/// Radar peta: filter destinasi, marker, hitung jarak GPS, dan garis ke pilihan aktif.
 class LbsScreen extends StatefulWidget {
   const LbsScreen({super.key});
 
@@ -66,6 +65,7 @@ class _LbsScreenState extends State<LbsScreen> {
 
   /// Meminta izin GPS dan mengambil posisi koordinat pengguna saat ini
   Future<void> _getCurrentLocation() async {
+    // Alur GPS: cek layanan/izin, ambil posisi, hitung semua jarak, lalu buat rute aktif.
     setState(() => _isLoadingLocation = true);
 
     try {
@@ -174,6 +174,7 @@ class _LbsScreenState extends State<LbsScreen> {
 
   /// Membuat garis rute lurus langsung sebagai ilustrasi jarak ke destinasi terpilih
   List<LatLng> _generateRealisticRoute(LatLng start, LocationData dest) {
+    // Garis hanya visualisasi garis lurus antara dua koordinat, bukan rute navigasi jalan/laut.
     return [start, LatLng(dest.latitude, dest.longitude)];
   }
 
@@ -256,6 +257,7 @@ class _LbsScreenState extends State<LbsScreen> {
                 userAgentPackageName: 'com.example.bajoland',
               ),
 
+              // Polyline kosong sebelum tombol cek jarak ditekan; pilihan baru memperbaruinya.
               // Garis ke destinasi terpilih muncul setelah jarak GPS dihitung.
               if (_currentRoute.isNotEmpty)
                 PolylineLayer(
@@ -455,6 +457,7 @@ class _LbsScreenState extends State<LbsScreen> {
             ),
           ),
 
+          // Panel bawah memakai radius hanya di sudut atas agar terasa menumpang di atas peta.
           // ─── 4. BOTTOM CARD SEDIKIT ROUNDED (Judul + Penjelasan + Filter + Carousel + Tombol) ───
           Positioned(
             left: 0,

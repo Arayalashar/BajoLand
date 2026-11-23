@@ -8,6 +8,7 @@ import 'package:bajoland/screens/all_destinations_screen.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  // Filter Pulau mengacu pada nama pulau juga, bukan kategori saja.
   test('Pulau category includes islands classified under other categories', () {
     const kelor = DestinasiModel(
       id: 9,
@@ -34,6 +35,7 @@ void main() {
     expect(destinationMatchesCategory(dermaga, 'Pulau'), isFalse);
   });
 
+  // Pastikan lokasi diving/kuliner baru muncul di data yang dipakai filter peta.
   test('Diving and culinary filters show the right destinations', () {
     final divingNames = bajoDestinations
         .where(
@@ -58,6 +60,7 @@ void main() {
     );
   });
 
+  // Preferensi login palsu menjaga widget test tidak membaca sesi perangkat nyata.
   testWidgets('BajoLand initial render test', (WidgetTester tester) async {
     SharedPreferences.setMockInitialValues({'loginData': false});
 

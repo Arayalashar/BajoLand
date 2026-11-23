@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Layanan penyimpanan Wishlist destinasi favorit lokal (SharedPreferences - Modul 6)
+/// Membaca dan mengubah ID destinasi favorit yang disimpan di SharedPreferences.
 class WishlistService {
   static const String _key = 'user_wishlist_ids';
 
@@ -33,7 +33,7 @@ class WishlistService {
   }
 }
 
-/// Controller GetX untuk sinkronisasi reaktif Wishlist di seluruh aplikasi (Home, Explore, Detail)
+/// Controller GetX menjaga ikon favorit tetap sinkron di Home, Explore, dan Detail.
 class WishlistController extends GetxController {
   static WishlistController get to {
     if (!Get.isRegistered<WishlistController>()) {
@@ -57,6 +57,7 @@ class WishlistController extends GetxController {
 
   bool isFavorite(int id) => wishlist.contains(id);
 
+  /// Mengubah penyimpanan terlebih dahulu, lalu memperbarui tampilan reaktif.
   Future<bool> toggleWishlist(int id) async {
     final isAdded = await WishlistService.toggleWishlist(id);
     if (isAdded) {

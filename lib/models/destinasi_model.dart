@@ -1,5 +1,6 @@
-/// Model Data Destinasi Wisata Labuan Bajo (Modul 3 & Modul 5: Model Class + factory fromJson)
+/// Bentuk data destinasi yang dipakai API, katalog, daftar, dan halaman detail.
 class DestinasiModel {
+  // Identitas, kategori, harga, lokasi, teks, dan media satu destinasi.
   final int id;
   final String name;
   final String category;
@@ -25,6 +26,7 @@ class DestinasiModel {
   });
 
   factory DestinasiModel.fromJson(Map<String, dynamic> json) {
+    // Mengubah nilai JSON yang mungkin bertipe umum menjadi tipe model yang aman.
     return DestinasiModel(
       id: json['id'] is int
           ? json['id'] as int
@@ -49,6 +51,7 @@ class DestinasiModel {
   }
 
   Map<String, dynamic> toJson() {
+    // Serialisasi dipakai saat data model perlu digabungkan atau disimpan kembali.
     return {
       'id': id,
       'name': name,

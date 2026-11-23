@@ -20,7 +20,7 @@ import 'itinerary_screen.dart';
 import 'notification_screen.dart';
 import 'root_screen.dart';
 
-/// Halaman Dashboard / Home BajoLand (Header Profil Sinkron, Anti-Overflow & Clean Theme)
+/// Beranda: header profil, pencarian, destinasi populer, dan tiga rencana terdekat.
 class ExploreScreen extends StatefulWidget {
   final String? userName;
 
@@ -108,6 +108,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   String _getDestinationImage(String destinationName) {
+    // Cocokkan nama itinerary ke katalog peta agar kartu rencana memakai foto tempatnya.
     final lower = destinationName.toLowerCase().trim();
     for (final b in bajoDestinations) {
       if (b.name.toLowerCase().contains(lower) || lower.contains(b.name.toLowerCase())) {
@@ -131,6 +132,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget build(BuildContext context) {
     final isSearching = _searchQuery.isNotEmpty;
 
+    // Tarik ke bawah memuat ulang destinasi, favorit, dan nama profil sekaligus.
     return Scaffold(
       backgroundColor: AppPalette.background,
       body: SafeArea(
@@ -160,6 +162,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                 const SizedBox(height: 18),
 
+                // Saat kolom pencarian terisi, dashboard diganti daftar hasil langsung.
+                // Jika kosong, tampilkan banner, katalog populer, dan rencana mendatang.
                 // ─── 3. Konten Utama atau Hasil Pencarian ──────────────────────
                 if (isSearching)
                   _buildSearchResultsSection()

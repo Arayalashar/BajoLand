@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Design System Tokens untuk BajoLand (sesuai spesifikasi Bookify/BajoLand design system)
+/// Token visual bersama agar warna, jarak, radius, bayangan, dan teks konsisten.
 abstract final class AppPalette {
-  // ─── Colors ────────────────────────────────────────────────────────────────
+  // Warna utama, latar, permukaan, teks, dan status dipakai lintas halaman.
   static const primary = Color(0xFF1A5FFF);
   static const primaryHover = Color(0xFF1550DB);
   static const primarySubtle = Color(0xFFEBF1FF);
@@ -31,14 +31,16 @@ abstract final class AppPalette {
   static const mist = primarySubtle;
   static const ivory = background;
 
-  // ─── Border Radii ──────────────────────────────────────────────────────────
+  // Semua radius memakai logical pixel: 8/12 untuk elemen kecil, 16/20 untuk kartu,
+  // dan 9999 untuk bentuk pil. Gunakan token ini agar bentuk UI seragam.
+  // Gunakan token ini alih-alih angka radius baru agar bentuk UI seragam.
   static const radiusSm = BorderRadius.all(Radius.circular(8));
   static const radiusMd = BorderRadius.all(Radius.circular(12));
   static const radiusLg = BorderRadius.all(Radius.circular(16));
   static const radiusXl = BorderRadius.all(Radius.circular(20));
   static const radiusFull = BorderRadius.all(Radius.circular(9999));
 
-  // ─── Spacing Tokens ────────────────────────────────────────────────────────
+  // Skala jarak bertahap dalam logical pixel untuk padding dan sela antar-widget.
   static const double spacingXs = 4.0;
   static const double spacingSm = 8.0;
   static const double spacingMd = 16.0;
@@ -47,7 +49,7 @@ abstract final class AppPalette {
   static const double spacing2xl = 32.0;
   static const double spacing3xl = 48.0;
 
-  // ─── Dual Soft Shadows ─────────────────────────────────────────────────────
+  // Bayangan lembut untuk mengangkat kartu dari latar tanpa garis tebal.
   static const List<BoxShadow> cardShadow = [
     BoxShadow(
       color: Color(0x0A0B1220), // rgba(11,18,32,0.04)
@@ -71,7 +73,7 @@ abstract final class AppPalette {
     ),
   ];
 
-  // ─── Typography Helpers (Inter / SF Pro Display) ───────────────────────────
+  // Helper tipografi: h1-h3 untuk judul, bodyMd untuk isi, caption/labelXs untuk teks kecil.
   static TextStyle h1({Color color = textPrimary}) => GoogleFonts.inter(
         fontSize: 26,
         fontWeight: FontWeight.w700,
