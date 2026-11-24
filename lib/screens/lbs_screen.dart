@@ -18,6 +18,7 @@ class LbsScreen extends StatefulWidget {
 }
 
 class _LbsScreenState extends State<LbsScreen> {
+  // Controller peta dan scroll memungkinkan kamera serta carousel dikendalikan dari kode.
   final MapController _mapController = MapController();
   final ScrollController _carouselController = ScrollController();
 

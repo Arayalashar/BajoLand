@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 /// Satu tempat untuk format tanggal/jam Indonesia dengan format numerik cadangan.
 class AppDateFormatter {
+  // Menandai bahwa locale Indonesia sudah pernah didaftarkan agar tidak diulang.
   static bool _initialized = false;
 
   /// Memastikan locale bahasa Indonesia terdaftar

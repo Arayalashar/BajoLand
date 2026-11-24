@@ -20,6 +20,7 @@ class DetailGearScreen extends StatefulWidget {
 }
 
 class _DetailGearScreenState extends State<DetailGearScreen> {
+  // Future detail akan dimuat sekali saat halaman dibuat.
   late Future<DestinasiModel> _destinasiFuture;
 
   @override

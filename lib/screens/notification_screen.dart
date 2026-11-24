@@ -18,6 +18,7 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
+  // Daftar notifikasi dirakit dari itinerary, preferensi anggaran, dan pesan informasi lokal.
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
 

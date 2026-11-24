@@ -88,6 +88,7 @@ class RootNavigationController extends GetxController {
 }
 
 class _RootScreenState extends State<RootScreen> {
+  // Controller ditangani bersama dengan lifecycle RootScreen agar data tab tidak bocor antar layar.
   late final RootNavigationController _controller;
   late final List<Widget> _screens;
 

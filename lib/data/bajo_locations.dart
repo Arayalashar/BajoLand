@@ -1,5 +1,6 @@
 /// Data peta untuk satu destinasi, termasuk koordinat yang dipakai Geolocator.
 class LocationData {
+  // Field jarak bersifat opsional karena jarak hanya tersedia setelah GPS diproses.
   final int id;
   final String name;
   final String category;

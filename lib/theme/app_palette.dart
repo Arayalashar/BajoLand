@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// Token visual bersama agar warna, jarak, radius, bayangan, dan teks konsisten.
 abstract final class AppPalette {
   // Warna utama, latar, permukaan, teks, dan status dipakai lintas halaman.
+  // Nilai ini menggunakan format ARGB: AA = opacity, RR = merah, GG = hijau, BB = biru.
   static const primary = Color(0xFF1A5FFF);
   static const primaryHover = Color(0xFF1550DB);
   static const primarySubtle = Color(0xFFEBF1FF);

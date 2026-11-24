@@ -34,6 +34,7 @@ class AllDestinationsScreen extends StatefulWidget {
 }
 
 class _AllDestinationsScreenState extends State<AllDestinationsScreen> {
+  // Future menyimpan permintaan data API agar dapat dipantau FutureBuilder.
   late Future<List<DestinasiModel>> _destinasiFuture;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';

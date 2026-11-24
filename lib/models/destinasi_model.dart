@@ -26,7 +26,8 @@ class DestinasiModel {
   });
 
   factory DestinasiModel.fromJson(Map<String, dynamic> json) {
-    // Mengubah nilai JSON yang mungkin bertipe umum menjadi tipe model yang aman.
+    // Konversi JSON dilakukan di sini agar tipe data yang tidak sesuai
+    // tidak langsung masuk ke widget sebagai nilai yang berpotensi error.
     return DestinasiModel(
       id: json['id'] is int
           ? json['id'] as int

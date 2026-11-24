@@ -6,6 +6,7 @@ import 'package:bajoland/models/destinasi_model.dart';
 import 'package:bajoland/screens/all_destinations_screen.dart';
 
 void main() {
+  // Mempastikan environment SharedPreferences dan widget Flutter siap digunakan.
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // Filter Pulau mengacu pada nama pulau juga, bukan kategori saja.

@@ -23,6 +23,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Data profil disimpan di state layar, sedangkan SharedPreferences menjadi penyimpanan permanen.
   late String _userName;
   String _userEmail = '';
   String _avatarUrl = '';

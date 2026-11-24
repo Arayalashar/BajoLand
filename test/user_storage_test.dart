@@ -4,6 +4,7 @@ import 'package:bajoland/models/user_model.dart';
 import 'package:bajoland/services/user_storage.dart';
 
 void main() {
+  // Mempastikan environment Flutter siap sebelum menjalankan pengujian penyimpanan.
   TestWidgetsFlutterBinding.ensureInitialized();
 
   // Setiap test memakai preferensi kosong agar akun dari test lain tidak terbawa.

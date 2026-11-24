@@ -17,6 +17,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
+  // Format mata uang dibuat terpisah agar tampilan kartu selalu konsisten.
   String _formatRupiah(double amount) {
     try {
       final formatter = NumberFormat.currency(

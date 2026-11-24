@@ -31,6 +31,7 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class _ExploreScreenState extends State<ExploreScreen> {
+  // Controller pencarian menyimpan teks yang diketik pengguna.
   late Future<List<DestinasiModel>> _destinasiFuture;
   final TextEditingController _searchController = TextEditingController();
 

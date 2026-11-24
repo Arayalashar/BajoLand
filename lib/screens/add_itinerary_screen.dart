@@ -31,6 +31,7 @@ class AddItineraryScreen extends StatefulWidget {
 }
 
 class _AddItineraryScreenState extends State<AddItineraryScreen> {
+  // Key form dipakai validator untuk memastikan seluruh input wajib sudah terisi.
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _destinationController;

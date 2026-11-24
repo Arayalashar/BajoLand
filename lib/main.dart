@@ -13,13 +13,13 @@ import 'theme/app_palette.dart';
 import 'utils/date_formatter.dart';
 
 void main() async {
-  // 1. Memastikan binding Flutter siap sebelum inisialisasi async
+  // Pastikan binding Flutter siap sebelum menjalankan proses asinkron.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inisialisasi locale formatting Indonesia untuk DateFormat
+  // Daftarkan locale Indonesia agar penulisan tanggal memiliki nama bulan dan hari lokal.
   await AppDateFormatter.ensureInitialized();
 
-  // 2. Inisialisasi Database NoSQL Lokal Hive (Modul 6)
+  // Inisialisasi database lokal Hive dan buka box itinerary sebelum aplikasi ditampilkan.
   await Hive.initFlutter();
   Hive.registerAdapter(ItineraryItemAdapter());
   await Hive.openBox<ItineraryItem>('itineraries');

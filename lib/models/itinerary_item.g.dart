@@ -1,5 +1,7 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
+// Berkas ini dibuat oleh Hive adapter generator.
+// Kode berikut mengubah antara object Dart dan binary yang tersimpan oleh Hive.
 part of 'itinerary_item.dart';
 
 // **************************************************************************

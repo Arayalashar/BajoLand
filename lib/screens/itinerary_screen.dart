@@ -24,6 +24,7 @@ class ItineraryScreen extends StatefulWidget {
 }
 
 class _ItineraryScreenState extends State<ItineraryScreen> {
+  // Batas anggaran dan filter waktu merupakan state lokal layar rundown.
   double _maxBudget = 5000000.0;
   int _selectedFilter = 0; // 0: Semua, 1: Mendatang, 2: Selesai
 
